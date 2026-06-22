@@ -1,0 +1,58 @@
+{
+  "name": "jolt-ts-character-controller",
+  "version": "0.0.0",
+  "description": "Imperative Ecctrl-style character and vehicle controllers for jolt-ts.",
+  "type": "module",
+  "packageManager": "pnpm@10.33.2",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "NOTICE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "build:demo": "vite build",
+    "check": "tsc -p tsconfig.json --noEmit",
+    "dev": "vite --host 127.0.0.1",
+    "perf": "pnpm run perf:controller",
+    "perf:controller": "vitest run perf/controller.perf.test.ts --reporter=verbose",
+    "test": "vitest run test/animation.test.ts test/controller.test.ts test/vehicle.test.ts",
+    "verify": "pnpm run check && pnpm run test && pnpm run build && pnpm run build:demo"
+  },
+  "keywords": [
+    "jolt",
+    "ecctrl",
+    "character-controller",
+    "vehicle-controller",
+    "drone-controller",
+    "physics"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "jolt-ts": "file:../jolt-ts",
+    "three": "^0.184.0"
+  },
+  "devDependencies": {
+    "@dimforge/rapier3d-compat": "^0.19.3",
+    "@types/node": "^20.12.12",
+    "@types/react": "19.1.12",
+    "@types/react-dom": "19.1.9",
+    "@types/three": "^0.184.1",
+    "camera-controls": "3.1.0",
+    "leva": "0.10.0",
+    "react": "19.1.1",
+    "react-dom": "19.1.1",
+    "stats-gl": "^4.1.0",
+    "typescript": "^5.4.5",
+    "vite": "^7.3.0",
+    "vitest": "^1.6.0"
+  }
+}

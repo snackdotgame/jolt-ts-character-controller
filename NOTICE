@@ -1,0 +1,8 @@
+This package contains an imperative TypeScript port of controller behavior from
+Ecctrl by Erdong Chen and contributors:
+
+  https://github.com/pmndrs/ecctrl
+
+Ecctrl is licensed under the MIT License. The port removes React, React Three
+Fiber, and react-three-rapier runtime dependencies and targets the local
+jolt-ts wrapper.
