@@ -129,6 +129,8 @@ export interface EcctrlSyncState {
   gravityDir: [number, number, number];
   onGround: boolean;
   canJump: boolean;
+  jumpActive: boolean; // a jump impulse is mid-application
+  jumpElapsed: number; // seconds the active jump has been applied
 }
 
 export const DEFAULT_ECCTRL_OPTIONS = {
@@ -505,7 +507,9 @@ export class EcctrlJoltController {
       angularVelocity: [a.x, a.y, a.z],
       gravityDir: [g.x, g.y, g.z],
       onGround: this.isOnGroundValue,
-      canJump: this.canJumpAgain
+      canJump: this.canJumpAgain,
+      jumpActive: this.jumpActiveValue,
+      jumpElapsed: this.jumpElapsedTime
     };
   }
 
@@ -525,6 +529,8 @@ export class EcctrlJoltController {
     this.isOnGroundValue = state.onGround;
     this.wasOnGroundValue = state.onGround;
     this.canJumpAgain = state.canJump;
+    this.jumpActiveValue = state.jumpActive;
+    this.jumpElapsedTime = state.jumpElapsed;
     this.currentPos.set(state.position[0], state.position[1], state.position[2]);
     this.currentVel.set(state.linearVelocity[0], state.linearVelocity[1], state.linearVelocity[2]);
     this.currentQuat.set(state.rotation[0], state.rotation[1], state.rotation[2], state.rotation[3]);
