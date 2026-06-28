@@ -1091,6 +1091,7 @@ function applyLiveSettings(): void {
   controller.options.slopeJumpFactor = ecctrl.slopeJumpFactor;
   controller.options.airDragFactor = ecctrl.airDragFactor;
   controller.options.slideGripFactor = ecctrl.slideGripFactor;
+  controller.options.platformGripFactor = ecctrl.platformGripFactor;
   controller.options.fallingGravityScale = ecctrl.fallingGravityScale;
   controller.options.fallingMaxVel = ecctrl.fallingMaxVel;
   controller.options.enableToggleRun = ecctrl.enableToggleRun;

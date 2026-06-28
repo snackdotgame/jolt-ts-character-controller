@@ -49,6 +49,7 @@ export interface EcctrlJoltControllerOptions extends EcctrlJoltRuntimeOptions {
   slopeJumpFactor?: number;
   airDragFactor?: number;
   slideGripFactor?: number;
+  platformGripFactor?: number;
   fallingGravityScale?: number;
   fallingMaxVel?: number;
   enableToggleRun?: boolean;
@@ -153,6 +154,7 @@ export const DEFAULT_ECCTRL_OPTIONS = {
   slopeJumpFactor: 0,
   airDragFactor: 0.1,
   slideGripFactor: 0.5,
+  platformGripFactor: 1,
   fallingGravityScale: 3,
   fallingMaxVel: 20,
   enableToggleRun: true,
@@ -990,10 +992,19 @@ export class EcctrlJoltController {
   private applyFriction(fpsCorr: number): void {
     if (!this.rayHitBodyValue || !this.isOnGroundValue) return;
     this.slideFrictionCoef = clamp((this.standingPointFriction + this.options.slideGripFactor) * 0.5, 0, 1);
+    // On a moving platform, drive the planar velocity *difference* toward zero
+    // directly with platformGripFactor (1 = fully match the surface velocity each
+    // frame, no slide). This is the same coupling that carries you off a rolling
+    // cylinder, so stronger grip = no slide on movers AND a stronger roll-off.
+    // The soft slide coefficient stays for static ground so slide-to-stop feel is
+    // unchanged (static stand bodies never set isOnMovingObjectValue).
+    const grip = this.isOnMovingObjectValue
+      ? clamp(this.options.platformGripFactor, 0, 1)
+      : clamp(this.slideFrictionCoef * clamp(this.options.decDeltaTime, 0, 1) * fpsCorr, 0, 1);
     this.dragFrictionImpulseVec
       .copy(this.relativeVelocityOnPlane)
       .negate()
-      .multiplyScalar(this.body.mass() * this.slideFrictionCoef * clamp(this.options.decDeltaTime, 0, 1) * fpsCorr);
+      .multiplyScalar(this.body.mass() * grip);
     this.body.applyImpulse(this.dragFrictionImpulseVec);
   }
 

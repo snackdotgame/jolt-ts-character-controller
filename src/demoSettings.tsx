@@ -39,6 +39,7 @@ export interface DemoSettings {
     slopeJumpFactor: number;
     airDragFactor: number;
     slideGripFactor: number;
+    platformGripFactor: number;
     liftGripFactor: number;
     fallingGravityScale: number;
     fallingMaxVel: number;
@@ -223,6 +224,7 @@ export function createDefaultDemoSettings(): DemoSettings {
       slopeJumpFactor: 0,
       airDragFactor: 0.1,
       slideGripFactor: 0.5,
+      platformGripFactor: 1,
       liftGripFactor: 0.16,
       fallingGravityScale: 3,
       fallingMaxVel: 20,
@@ -398,6 +400,7 @@ function DemoLevaSettings(props: {
         slopeJumpFactor: { value: settings.ecctrl.slopeJumpFactor, step: 0.01, min: 0, max: 1 },
         airDragFactor: { value: settings.ecctrl.airDragFactor, step: 0.01, min: 0, max: 1 },
         slideGripFactor: { value: settings.ecctrl.slideGripFactor, step: 0.01, min: 0, max: 1 },
+        platformGripFactor: { value: settings.ecctrl.platformGripFactor, step: 0.01, min: 0, max: 1 },
         liftGripFactor: { value: settings.ecctrl.liftGripFactor, step: 0.01, min: 0, max: 1 },
         fallingGravityScale: { value: settings.ecctrl.fallingGravityScale, step: 0.01, min: 0, max: 20 },
         fallingMaxVel: { value: settings.ecctrl.fallingMaxVel, step: 0.01, min: 0, max: 100 },
