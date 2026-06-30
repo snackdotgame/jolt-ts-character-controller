@@ -4,5 +4,5 @@ Ecctrl by Erdong Chen and contributors:
   https://github.com/pmndrs/ecctrl
 
 Ecctrl is licensed under the MIT License. The port removes React, React Three
-Fiber, and react-three-rapier runtime dependencies and targets the local
+Fiber, and react-three-rapier runtime dependencies and targets the published
 jolt-ts wrapper.

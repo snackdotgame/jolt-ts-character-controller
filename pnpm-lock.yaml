@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       jolt-ts:
-        specifier: file:../jolt-ts
-        version: file:../jolt-ts
+        specifier: ^0.1.0
+        version: 0.1.0
       three:
         specifier: ^0.184.0
         version: 0.184.0
@@ -845,8 +845,8 @@ packages:
     resolution: {integrity: sha512-WhB9zCku7EGTj/HQQRz5aUQEUeoQZH2bWcltRErOpymJ4boYE6wL9Tbr23krRPSZ+C5zqNSrSw+Cc7sZZ4b7vg==}
     engines: {node: '>=0.10.0'}
 
-  jolt-ts@file:../jolt-ts:
-    resolution: {directory: ../jolt-ts, type: directory}
+  jolt-ts@0.1.0:
+    resolution: {integrity: sha512-9W3nvvngMJCSxG2lUlscUQr8u+y8WyQdcXPJsnNYjodLDLLSXh8cNgNm3uHI8PbbPUjHNuxPa0TftPI8q9QNig==}
 
   js-tokens@4.0.0:
     resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}
@@ -1862,7 +1862,7 @@ snapshots:
 
   isobject@3.0.1: {}
 
-  jolt-ts@file:../jolt-ts: {}
+  jolt-ts@0.1.0: {}
 
   js-tokens@4.0.0: {}
 

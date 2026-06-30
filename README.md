@@ -1,6 +1,6 @@
 # jolt-ts-character-controller
 
-Imperative Ecctrl-style character and vehicle controllers for the local
+Imperative Ecctrl-style character and vehicle controllers for the
 `jolt-ts` wrapper. The runtime surface is rendering-free: callers own their
 Jolt world, render loop, networking, and asset scene.
 

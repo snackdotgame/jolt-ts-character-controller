@@ -15,6 +15,7 @@
   "files": [
     "dist",
     "README.md",
+    "LICENSE",
     "NOTICE"
   ],
   "scripts": {
@@ -36,8 +37,16 @@
     "physics"
   ],
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/snackdotgame/jolt-ts-character-controller.git"
+  },
+  "bugs": {
+    "url": "https://github.com/snackdotgame/jolt-ts-character-controller/issues"
+  },
+  "homepage": "https://github.com/snackdotgame/jolt-ts-character-controller#readme",
   "dependencies": {
-    "jolt-ts": "file:../jolt-ts",
+    "jolt-ts": "^0.1.0",
     "three": "^0.184.0"
   },
   "devDependencies": {
