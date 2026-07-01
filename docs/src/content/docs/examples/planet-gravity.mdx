@@ -1,0 +1,39 @@
+---
+title: Planet gravity
+description: A character walking all the way around a small planet using a custom radial gravity field and its own up-axis.
+---
+
+import PhysicsDemo from "../../../components/PhysicsDemo.astro";
+
+World gravity is switched off; instead the character carries a **radial gravity
+field** pointing at the planet's center. With `useCharacterUpAxis`, auto-balance
+keeps it standing upright relative to the surface, so it walks a great circle
+right around the little world.
+
+<PhysicsDemo demo="planet-gravity" hint="Drag to orbit" />
+
+## How it works
+
+```ts
+import { Vector3 } from "three";
+
+const gravity = new Vector3();
+const controller = new CharacterController({
+  world,                        // created with gravity [0, 0, 0]
+  position: [0, R + 0.9, 0],
+  enableCustomGravity: true,
+  useCharacterUpAxis: true,     // control relative to the body's own up
+  gravityField: (p) => gravity.copy(p).normalize().multiplyScalar(-9.81),
+});
+
+function fixedStep(dt) {
+  controller.setForwardDirection(controller.bodyZAxis); // walk along current facing
+  controller.setMovement({ forward: true });
+  controller.step(dt);
+  world.step(dt);
+}
+```
+
+## See also
+
+- [Custom Gravity](/jolt-ts-character-controller/character-controller/custom-gravity/) — gravity fields, the up-axis, and wall/planet walking.

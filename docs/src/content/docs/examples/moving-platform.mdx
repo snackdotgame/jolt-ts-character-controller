@@ -1,0 +1,41 @@
+---
+title: Moving platform
+description: A character riding a kinematic platform back and forth via followPlatform, carried without sliding off.
+---
+
+import PhysicsDemo from "../../../components/PhysicsDemo.astro";
+
+A kinematic platform slides back and forth. The character just stands on it —
+no walk input — and is carried along by `followPlatform`, matching the surface
+velocity so it never slides off. A loose box rides too.
+
+<PhysicsDemo demo="moving-platform" hint="Drag to orbit" />
+
+## How it works
+
+The platform is driven with `moveKinematic` before the world steps; the
+controller then steps and inherits the platform's velocity automatically.
+
+```ts
+const platform = world.createBody({
+  type: "kinematic",
+  shape: Shape.box({ halfExtents: [2, 0.15, 2] }),
+  position: [-4, 0.5, 0],
+  layer: "moving",
+});
+
+let time = 0;
+function fixedStep(dt) {
+  time += dt;
+  const x = Math.sin(time * 0.6) * 4;
+  platform.moveKinematic([x, 0.5, 0], [0, 0, 0, 1], dt); // Jolt derives the velocity
+
+  controller.setMovement({});  // just ride — no walk input
+  controller.step(dt);         // followPlatform carries the character
+  world.step(dt);
+}
+```
+
+## See also
+
+- [Moving Platforms](/jolt-ts-character-controller/character-controller/moving-platforms/) — `followPlatform`, `platformGripFactor`, and dynamic-ground counter-impulses.

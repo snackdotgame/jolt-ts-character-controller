@@ -1,6 +1,6 @@
-import type { EcctrlJoltController, EcctrlJoltControllerSnapshot } from "./controller.js";
+import type { CharacterController, CharacterControllerSnapshot } from "./controller.js";
 
-export type EcctrlAnimationState =
+export type AnimationState =
   | "IDLE"
   | "WALK"
   | "RUN"
@@ -9,7 +9,7 @@ export type EcctrlAnimationState =
   | "JUMP_FALL"
   | "JUMP_LAND";
 
-export interface EcctrlAnimationSnapshot {
+export interface AnimationSnapshot {
   readonly isOnGround: boolean;
   readonly isFalling: boolean;
   readonly isMoving: boolean;
@@ -17,23 +17,23 @@ export interface EcctrlAnimationSnapshot {
   readonly jumpActive: boolean;
 }
 
-export interface EcctrlAnimationStateContext<THandle = unknown> extends EcctrlAnimationSnapshot {
+export interface AnimationStateContext<THandle = unknown> extends AnimationSnapshot {
   readonly handle: THandle | null;
   readonly wasOnGround: boolean;
 }
 
-export type EcctrlAnimationStateResolver<THandle = unknown> = (
-  context: EcctrlAnimationStateContext<THandle>
-) => EcctrlAnimationState;
+export type AnimationStateResolver<THandle = unknown> = (
+  context: AnimationStateContext<THandle>
+) => AnimationState;
 
-export interface EcctrlAnimationStateControllerOptions<THandle = unknown> {
+export interface AnimationStateControllerOptions<THandle = unknown> {
   readonly handle?: THandle | null;
-  readonly getSnapshot: () => EcctrlAnimationSnapshot;
-  readonly resolver?: EcctrlAnimationStateResolver<THandle>;
-  readonly initialState?: EcctrlAnimationState;
+  readonly getSnapshot: () => AnimationSnapshot;
+  readonly resolver?: AnimationStateResolver<THandle>;
+  readonly initialState?: AnimationState;
   readonly onChange?: (
-    animationState: EcctrlAnimationState,
-    context: EcctrlAnimationStateContext<THandle>
+    animationState: AnimationState,
+    context: AnimationStateContext<THandle>
   ) => void;
 }
 
@@ -50,24 +50,24 @@ type MutableAnimationStateContext<THandle> = MutableAnimationSnapshot & {
   wasOnGround: boolean;
 };
 
-export class EcctrlAnimationStateController<THandle = unknown> {
+export class AnimationStateController<THandle = unknown> {
   readonly handle: THandle | null;
-  readonly getSnapshot: () => EcctrlAnimationSnapshot;
-  readonly resolver: EcctrlAnimationStateResolver<THandle>;
+  readonly getSnapshot: () => AnimationSnapshot;
+  readonly resolver: AnimationStateResolver<THandle>;
   readonly onChange?: (
-    animationState: EcctrlAnimationState,
-    context: EcctrlAnimationStateContext<THandle>
+    animationState: AnimationState,
+    context: AnimationStateContext<THandle>
   ) => void;
 
   private initialized = false;
   private previousIsOnGround = false;
-  private currentState: EcctrlAnimationState;
+  private currentState: AnimationState;
   private readonly context: MutableAnimationStateContext<THandle>;
 
-  constructor(options: EcctrlAnimationStateControllerOptions<THandle>) {
+  constructor(options: AnimationStateControllerOptions<THandle>) {
     this.handle = options.handle ?? null;
     this.getSnapshot = options.getSnapshot;
-    this.resolver = options.resolver ?? resolveEcctrlAnimationState;
+    this.resolver = options.resolver ?? resolveAnimationState;
     this.onChange = options.onChange;
     this.currentState = options.initialState ?? "IDLE";
     this.context = {
@@ -81,7 +81,7 @@ export class EcctrlAnimationStateController<THandle = unknown> {
     };
   }
 
-  update(): EcctrlAnimationState {
+  update(): AnimationState {
     const snapshot = this.getSnapshot();
     this.context.isOnGround = snapshot.isOnGround;
     this.context.wasOnGround = this.initialized ? this.previousIsOnGround : snapshot.isOnGround;
@@ -99,18 +99,18 @@ export class EcctrlAnimationStateController<THandle = unknown> {
     return this.currentState;
   }
 
-  reset(state: EcctrlAnimationState = "IDLE", isOnGround = false): void {
+  reset(state: AnimationState = "IDLE", isOnGround = false): void {
     this.currentState = state;
     this.previousIsOnGround = isOnGround;
     this.initialized = false;
   }
 
-  get state(): EcctrlAnimationState {
+  get state(): AnimationState {
     return this.currentState;
   }
 }
 
-export const resolveEcctrlAnimationState: EcctrlAnimationStateResolver = ({
+export const resolveAnimationState: AnimationStateResolver = ({
   isOnGround,
   wasOnGround,
   isFalling,
@@ -130,8 +130,8 @@ export const resolveEcctrlAnimationState: EcctrlAnimationStateResolver = ({
 };
 
 export function animationSnapshotFromControllerSnapshot(
-  snapshot: Pick<EcctrlJoltControllerSnapshot, "isOnGround" | "isFalling" | "isMoving" | "runActive" | "jumpActive">
-): EcctrlAnimationSnapshot {
+  snapshot: Pick<CharacterControllerSnapshot, "isOnGround" | "isFalling" | "isMoving" | "runActive" | "jumpActive">
+): AnimationSnapshot {
   return {
     isOnGround: snapshot.isOnGround,
     isFalling: snapshot.isFalling,
@@ -141,10 +141,10 @@ export function animationSnapshotFromControllerSnapshot(
   };
 }
 
-export function createEcctrlJoltAnimationStateController(
-  controller: EcctrlJoltController,
-  options: Omit<EcctrlAnimationStateControllerOptions<EcctrlJoltController>, "handle" | "getSnapshot"> = {}
-): EcctrlAnimationStateController<EcctrlJoltController> {
+export function createCharacterAnimationStateController(
+  controller: CharacterController,
+  options: Omit<AnimationStateControllerOptions<CharacterController>, "handle" | "getSnapshot"> = {}
+): AnimationStateController<CharacterController> {
   const snapshot: MutableAnimationSnapshot = {
     isOnGround: false,
     isFalling: false,
@@ -152,7 +152,7 @@ export function createEcctrlJoltAnimationStateController(
     runActive: false,
     jumpActive: false
   };
-  return new EcctrlAnimationStateController({
+  return new AnimationStateController({
     ...options,
     handle: controller,
     getSnapshot: () => {

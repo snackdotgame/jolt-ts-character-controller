@@ -16,7 +16,7 @@ export interface DemoSettings {
     followPlayer: boolean;
     smoothTime: number;
   };
-  ecctrl: {
+  character: {
     animatedCharacter: boolean;
     debug: boolean;
     enable: boolean;
@@ -201,7 +201,7 @@ export function createDefaultDemoSettings(): DemoSettings {
       followPlayer: true,
       smoothTime: 0.1
     },
-    ecctrl: {
+    character: {
       animatedCharacter: true,
       debug: true,
       enable: true,
@@ -366,80 +366,80 @@ function DemoLevaSettings(props: {
     smoothTime: cameraValues.smoothTime
   });
 
-  const ecctrlValues = useControls(
-    "Ecctrl Settings",
+  const characterValues = useControls(
+    "Character Settings",
     {
       ResetPlayer: button(actions.resetPlayer),
-      animatedCharacter: settings.ecctrl.animatedCharacter,
-      debug: settings.ecctrl.debug,
-      enable: settings.ecctrl.enable,
-      canSleep: settings.ecctrl.canSleep,
+      animatedCharacter: settings.character.animatedCharacter,
+      debug: settings.character.debug,
+      enable: settings.character.enable,
+      canSleep: settings.character.canSleep,
       Collider: folder({
-        density: { value: settings.ecctrl.density, step: 1, min: 1, max: 1000 },
-        capsuleHalfHeight: { value: settings.ecctrl.capsuleHalfHeight, step: 0.01, min: 0.2, max: 1 },
-        capsuleRadius: { value: settings.ecctrl.capsuleRadius, step: 0.01, min: 0.3, max: 0.7 }
+        density: { value: settings.character.density, step: 1, min: 1, max: 1000 },
+        capsuleHalfHeight: { value: settings.character.capsuleHalfHeight, step: 0.01, min: 0.2, max: 1 },
+        capsuleRadius: { value: settings.character.capsuleRadius, step: 0.01, min: 0.3, max: 0.7 }
       }, { collapsed: true }),
       ForwardDir: folder({
         toggleLockForward: button(actions.toggleLockForward),
-        useCameraForward: settings.ecctrl.useCameraForward,
-        useCharacterUpForForward: settings.ecctrl.useCharacterUpForForward
+        useCameraForward: settings.character.useCameraForward,
+        useCharacterUpForForward: settings.character.useCharacterUpForForward
       }, { collapsed: true }),
       CustomeG: folder({
-        enableCustomGravity: settings.ecctrl.enableCustomGravity,
-        gravityDirLerpSpeed: { value: settings.ecctrl.gravityDirLerpSpeed, step: 0.01, min: 0, max: 20 }
+        enableCustomGravity: settings.character.enableCustomGravity,
+        gravityDirLerpSpeed: { value: settings.character.gravityDirLerpSpeed, step: 0.01, min: 0, max: 20 }
       }, { collapsed: true }),
       Movement: folder({
-        maxWalkVel: { value: settings.ecctrl.maxWalkVel, step: 0.01, min: 0, max: 30 },
-        maxRunVel: { value: settings.ecctrl.maxRunVel, step: 0.01, min: 0, max: 30 },
-        accDeltaTime: { value: settings.ecctrl.accDeltaTime, step: 0.01, min: 0, max: 1 },
-        decDeltaTime: { value: settings.ecctrl.decDeltaTime, step: 0.01, min: 0, max: 1 },
-        rejectVelFactor: { value: settings.ecctrl.rejectVelFactor, step: 0.01, min: 0, max: 10 },
-        moveImpulsePointOffset: { value: settings.ecctrl.moveImpulsePointOffset, step: 0.01, min: -1, max: 1 },
-        jumpVel: { value: settings.ecctrl.jumpVel, step: 0.01, min: 0, max: 20 },
-        jumpDuration: { value: settings.ecctrl.jumpDuration, step: 0.01, min: 0, max: 0.5 },
-        slopeJumpFactor: { value: settings.ecctrl.slopeJumpFactor, step: 0.01, min: 0, max: 1 },
-        airDragFactor: { value: settings.ecctrl.airDragFactor, step: 0.01, min: 0, max: 1 },
-        slideGripFactor: { value: settings.ecctrl.slideGripFactor, step: 0.01, min: 0, max: 1 },
-        platformGripFactor: { value: settings.ecctrl.platformGripFactor, step: 0.01, min: 0, max: 1 },
-        liftGripFactor: { value: settings.ecctrl.liftGripFactor, step: 0.01, min: 0, max: 1 },
-        fallingGravityScale: { value: settings.ecctrl.fallingGravityScale, step: 0.01, min: 0, max: 20 },
-        fallingMaxVel: { value: settings.ecctrl.fallingMaxVel, step: 0.01, min: 0, max: 100 },
-        enableToggleRun: settings.ecctrl.enableToggleRun
+        maxWalkVel: { value: settings.character.maxWalkVel, step: 0.01, min: 0, max: 30 },
+        maxRunVel: { value: settings.character.maxRunVel, step: 0.01, min: 0, max: 30 },
+        accDeltaTime: { value: settings.character.accDeltaTime, step: 0.01, min: 0, max: 1 },
+        decDeltaTime: { value: settings.character.decDeltaTime, step: 0.01, min: 0, max: 1 },
+        rejectVelFactor: { value: settings.character.rejectVelFactor, step: 0.01, min: 0, max: 10 },
+        moveImpulsePointOffset: { value: settings.character.moveImpulsePointOffset, step: 0.01, min: -1, max: 1 },
+        jumpVel: { value: settings.character.jumpVel, step: 0.01, min: 0, max: 20 },
+        jumpDuration: { value: settings.character.jumpDuration, step: 0.01, min: 0, max: 0.5 },
+        slopeJumpFactor: { value: settings.character.slopeJumpFactor, step: 0.01, min: 0, max: 1 },
+        airDragFactor: { value: settings.character.airDragFactor, step: 0.01, min: 0, max: 1 },
+        slideGripFactor: { value: settings.character.slideGripFactor, step: 0.01, min: 0, max: 1 },
+        platformGripFactor: { value: settings.character.platformGripFactor, step: 0.01, min: 0, max: 1 },
+        liftGripFactor: { value: settings.character.liftGripFactor, step: 0.01, min: 0, max: 1 },
+        fallingGravityScale: { value: settings.character.fallingGravityScale, step: 0.01, min: 0, max: 20 },
+        fallingMaxVel: { value: settings.character.fallingMaxVel, step: 0.01, min: 0, max: 100 },
+        enableToggleRun: settings.character.enableToggleRun
       }, { collapsed: true }),
       Floating: folder({
-        groundDetection: { value: settings.ecctrl.groundDetection, options: ["shapeCast", "rayCast"] as const },
-        slopeMaxAngle: { value: settings.ecctrl.slopeMaxAngle, step: 0.01, min: 0.01, max: Math.PI / 2 },
-        floatHeight: { value: settings.ecctrl.floatHeight, step: 0.01, min: 0, max: 5 },
-        rayOriginOffest: { value: settings.ecctrl.rayOriginOffest, step: 0.01, min: -1, max: 1 },
-        rayHitForgiveness: { value: settings.ecctrl.rayHitForgiveness, step: 0.01, min: 0, max: 1 },
-        rayLength: { value: settings.ecctrl.rayLength, step: 0.01, min: 0, max: 5 },
-        rayRadius: { value: settings.ecctrl.rayRadius, step: 0.01, min: 0, max: 0.5 },
-        springK: { value: settings.ecctrl.springK, step: 0.01, min: 0, max: 10000 },
-        dampingC: { value: settings.ecctrl.dampingC, step: 0.01, min: 0, max: 2000 }
+        groundDetection: { value: settings.character.groundDetection, options: ["shapeCast", "rayCast"] as const },
+        slopeMaxAngle: { value: settings.character.slopeMaxAngle, step: 0.01, min: 0.01, max: Math.PI / 2 },
+        floatHeight: { value: settings.character.floatHeight, step: 0.01, min: 0, max: 5 },
+        rayOriginOffest: { value: settings.character.rayOriginOffest, step: 0.01, min: -1, max: 1 },
+        rayHitForgiveness: { value: settings.character.rayHitForgiveness, step: 0.01, min: 0, max: 1 },
+        rayLength: { value: settings.character.rayLength, step: 0.01, min: 0, max: 5 },
+        rayRadius: { value: settings.character.rayRadius, step: 0.01, min: 0, max: 0.5 },
+        springK: { value: settings.character.springK, step: 0.01, min: 0, max: 10000 },
+        dampingC: { value: settings.character.dampingC, step: 0.01, min: 0, max: 2000 }
       }, { collapsed: true }),
       Balance: folder({
-        autoBalance: settings.ecctrl.autoBalance,
-        autoBalanceSpringK: { value: settings.ecctrl.autoBalanceSpringK, step: 0.01, min: 0, max: 200 },
-        autoBalanceDampingC: { value: settings.ecctrl.autoBalanceDampingC, step: 0.01, min: 0, max: 50 },
-        autoBalanceSpringOnY: { value: settings.ecctrl.autoBalanceSpringOnY, step: 0.01, min: 0, max: 200 },
-        autoBalanceDampingOnY: { value: settings.ecctrl.autoBalanceDampingOnY, step: 0.01, min: 0, max: 50 }
+        autoBalance: settings.character.autoBalance,
+        autoBalanceSpringK: { value: settings.character.autoBalanceSpringK, step: 0.01, min: 0, max: 200 },
+        autoBalanceDampingC: { value: settings.character.autoBalanceDampingC, step: 0.01, min: 0, max: 50 },
+        autoBalanceSpringOnY: { value: settings.character.autoBalanceSpringOnY, step: 0.01, min: 0, max: 200 },
+        autoBalanceDampingOnY: { value: settings.character.autoBalanceDampingOnY, step: 0.01, min: 0, max: 50 }
       }, { collapsed: true }),
       Platform: folder({
-        followPlatform: settings.ecctrl.followPlatform,
+        followPlatform: settings.character.followPlatform,
         massRatioFallOffCurveData: CurveEditorPlugin({
-          points: settings.ecctrl.massRatioFallOffCurveData.points,
-          samples: { value: settings.ecctrl.massRatioFallOffCurveData.samples ?? 50, min: 2, max: 500, step: 1 }
+          points: settings.character.massRatioFallOffCurveData.points,
+          samples: { value: settings.character.massRatioFallOffCurveData.samples ?? 50, min: 2, max: 500, step: 1 }
         }),
-        applyCounterMass: settings.ecctrl.applyCounterMass,
-        applyCounterJumpImp: settings.ecctrl.applyCounterJumpImp,
-        counterJumpImpFactor: { value: settings.ecctrl.counterJumpImpFactor, step: 0.01, min: 0, max: 5 },
-        applyCounterMoveImp: settings.ecctrl.applyCounterMoveImp,
-        counterMoveImpFactor: { value: settings.ecctrl.counterMoveImpFactor, step: 0.01, min: 0, max: 5 }
+        applyCounterMass: settings.character.applyCounterMass,
+        applyCounterJumpImp: settings.character.applyCounterJumpImp,
+        counterJumpImpFactor: { value: settings.character.counterJumpImpFactor, step: 0.01, min: 0, max: 5 },
+        applyCounterMoveImp: settings.character.applyCounterMoveImp,
+        counterMoveImpFactor: { value: settings.character.counterMoveImpFactor, step: 0.01, min: 0, max: 5 }
       }, { collapsed: true })
     },
     { collapsed: true }
   );
-  Object.assign(settings.ecctrl, ecctrlValues);
+  Object.assign(settings.character, characterValues);
 
   useCarVehicleControls("Vehicle 1 Body Settings", "Vehicle 1 Wheel Settings", settings.vehicles.vehicle1, actions.flipVehicle1);
   useCarVehicleControls("Vehicle 2 Body Settings", "Vehicle 2 Wheel Settings", settings.vehicles.vehicle2, actions.flipVehicle2);

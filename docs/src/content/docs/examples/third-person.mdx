@@ -1,0 +1,58 @@
+---
+title: Third-person (interactive)
+description: Play a third-person character — WASD to move relative to the camera, drag to look, Space to jump, Shift to run.
+---
+
+import PhysicsDemo from "../../../components/PhysicsDemo.astro";
+
+An actual playable character. **Click the demo**, then **WASD** to move (relative
+to the camera), **drag** to look around, **Space** to jump, **Shift** to run. A
+follow camera trails behind the capsule.
+
+<PhysicsDemo demo="third-person" hint="Click · WASD move · drag look · Space jump · Shift run" height={520} />
+
+## How it works
+
+Movement is camera-relative, exactly like the snack-dash template: the keyboard
+and the camera yaw are combined into a world-space move vector, which is fed to
+the controller as its custom "forward" axis.
+
+```ts
+// World-space move vector from WASD + camera yaw (fwd = W/S, side = A/D).
+const sin = Math.sin(camYaw), cos = Math.cos(camYaw);
+const mx = fwd * sin - side * cos;
+const mz = fwd * cos + side * sin;
+const moving = Math.hypot(mx, mz) > 1e-3;
+
+if (moving) controller.setForwardDirection({ x: mx, y: 0, z: mz }); // normalized
+controller.setMovement({ forward: moving, run: shiftHeld, jump: spaceHeld });
+controller.step(dt);
+world.step(dt);
+```
+
+The follow camera trails the capsule each frame:
+
+```ts
+const p = controller.currPos;
+const target = new Vector3(p.x, p.y + 0.6, p.z);
+const off = new Vector3(
+  -Math.sin(camYaw) * Math.cos(camPitch),
+  Math.sin(camPitch),
+  -Math.cos(camYaw) * Math.cos(camPitch),
+).multiplyScalar(7);
+camera.position.lerp(target.clone().add(off), 1 - Math.exp(-dt * 12));
+camera.lookAt(target);
+```
+
+:::note[Two setup details that matter]
+As in every character demo here, the body is created **rotation-locked** with a
+**mass-scaled float spring**, and it's allowed to **settle idle** for a moment
+before input is applied — the controller only computes its ground friction while
+idle, so a character driven from the very first frame would never build any move
+force. See [Configuration](/jolt-ts-character-controller/character-controller/configuration/#ground-detection--floating).
+:::
+
+## See also
+
+- [Movement & Input](/jolt-ts-character-controller/character-controller/movement-and-input/) — camera-relative movement, running, jumping.
+- [Quick Start](/jolt-ts-character-controller/getting-started/quick-start/) — the minimal keyboard-driven setup.

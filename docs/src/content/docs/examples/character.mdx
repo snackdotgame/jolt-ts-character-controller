@@ -1,0 +1,47 @@
+---
+title: Character locomotion
+description: A live CharacterController walking a looping path and jumping, driven entirely by scripted input each fixed step.
+---
+
+import PhysicsDemo from "../../../components/PhysicsDemo.astro";
+
+A `CharacterController` on a flat ground plane. Its forward vector rotates each
+step so it walks a loop, it breaks into a run periodically, and it jumps every
+few seconds — all from scripted input. The controller steps **before** the
+world, and its capsule body's pose is copied onto the mesh each frame.
+
+<PhysicsDemo demo="character-walk" hint="Drag to orbit · scroll to zoom" />
+
+## How it works
+
+```ts
+import { CharacterController } from "jolt-ts-character-controller";
+
+const controller = new CharacterController({
+  world,
+  position: [3, 1.2, 0],
+  useCustomForward: true,   // the forward vector is a world axis
+  enableToggleRun: false,   // hold-to-run
+});
+
+let t = 0, jumpTimer = 0;
+function fixedStep(dt) {
+  t += dt; jumpTimer += dt;
+
+  // Forward points along the tangent of a circle → the character walks a loop.
+  const angle = t * 0.7;
+  controller.setForwardDirection({ x: -Math.sin(angle), y: 0, z: Math.cos(angle) });
+
+  const jump = jumpTimer > 3 && (jumpTimer = 0, true);
+  controller.setMovement({ forward: true, run: Math.sin(t * 0.25) > 0.35, jump });
+
+  controller.step(dt); // apply movement/jump/float impulses
+  world.step(dt);      // integrate
+}
+```
+
+## See also
+
+- [Overview](/jolt-ts-character-controller/character-controller/overview/) — the tick model and fixed timestep.
+- [Movement & Input](/jolt-ts-character-controller/character-controller/movement-and-input/) — forward direction, running, jumping.
+- [Quick Start](/jolt-ts-character-controller/getting-started/quick-start/) — the same thing with keyboard input.

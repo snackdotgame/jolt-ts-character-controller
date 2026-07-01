@@ -1,0 +1,45 @@
+---
+// A runnable jolt-ts-character-controller simulation embedded in the docs.
+//
+// Usage in an .mdx page:
+//   import PhysicsDemo from "../../../components/PhysicsDemo.astro";
+//   <PhysicsDemo demo="character-walk" hint="Drag to orbit" caption="…" />
+//
+// `demo` must match a file at src/demos/<demo>.ts. The demo stays idle until the
+// reader presses "Run demo"; state is driven by the stage's `data-state`.
+interface Props {
+  demo: string;
+  caption?: string;
+  hint?: string;
+  height?: number;
+}
+
+const { demo, caption, hint = "Drag to orbit · scroll to zoom", height = 440 } = Astro.props;
+---
+
+<figure class="demo not-content">
+  <div class="demo__stage" data-state="idle" style={`height:${height}px`}>
+    <canvas data-demo={demo}></canvas>
+    {hint && <p class="demo__hint">{hint}</p>}
+    <div class="demo__toolbar">
+      <button type="button" data-action="toggle">❚❚ Pause</button>
+      <button type="button" data-action="reset" aria-label="Reset simulation">↺ Reset</button>
+    </div>
+    <div class="demo__overlay">
+      <button type="button" class="demo__run" data-action="run">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor" /></svg>
+        Run demo
+      </button>
+      <div class="demo__loading"><span class="demo__spinner"></span><span>Loading physics…</span></div>
+      <p class="demo__error" role="alert"></p>
+    </div>
+  </div>
+  {caption && <figcaption set:html={caption} />}
+</figure>
+
+<script>
+  import { mountDemos } from "../lib/demoRunner";
+  mountDemos();
+  // Starlight uses view transitions; re-scan after client-side navigation.
+  document.addEventListener("astro:page-load", mountDemos);
+</script>

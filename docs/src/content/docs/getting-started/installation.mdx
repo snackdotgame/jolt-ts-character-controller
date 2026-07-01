@@ -1,0 +1,130 @@
+---
+title: Installation
+description: Install jolt-ts-character-controller together with its jolt-ts and three peers, and set up a Jolt physics world.
+---
+
+import { Tabs, TabItem, Steps } from '@astrojs/starlight/components';
+
+## Install the package
+
+The controllers depend on [`jolt-ts`](https://www.npmjs.com/package/jolt-ts)
+(the physics wrapper) and [`three`](https://threejs.org/) (used for its math
+types — `Vector3`, `Quaternion`). Install all three:
+
+<Tabs syncKey="pkg">
+  <TabItem label="pnpm">
+    ```sh
+    pnpm add jolt-ts-character-controller jolt-ts three
+    ```
+  </TabItem>
+  <TabItem label="npm">
+    ```sh
+    npm install jolt-ts-character-controller jolt-ts three
+    ```
+  </TabItem>
+  <TabItem label="yarn">
+    ```sh
+    yarn add jolt-ts-character-controller jolt-ts three
+    ```
+  </TabItem>
+</Tabs>
+
+If you use TypeScript, add the Three.js types as a dev dependency:
+
+<Tabs syncKey="pkg">
+  <TabItem label="pnpm">
+    ```sh
+    pnpm add -D @types/three
+    ```
+  </TabItem>
+  <TabItem label="npm">
+    ```sh
+    npm install -D @types/three
+    ```
+  </TabItem>
+  <TabItem label="yarn">
+    ```sh
+    yarn add -D @types/three
+    ```
+  </TabItem>
+</Tabs>
+
+:::note[ESM only]
+The package is published as ESM with bundled type declarations
+(`"type": "module"`). Import it with `import` syntax from an ESM project or a
+bundler such as Vite. There is no CommonJS `require` build.
+:::
+
+## Create a physics world
+
+Everything in this library operates on a `jolt-ts` `World`. The simplest setup
+creates a world and lets it load the Jolt runtime for you:
+
+```ts
+import { World, Shape } from "jolt-ts";
+
+const world = await World.create({ gravity: [0, -9.81, 0] });
+
+// A static floor to stand on.
+world.createBody({
+  type: "static",
+  shape: Shape.box({ halfExtents: [25, 0.5, 25] }),
+  position: [0, -0.5, 0],
+  layer: "static",
+  friction: 0.8,
+});
+```
+
+### Deterministic worlds
+
+For headless simulation, tests, or networked play where every peer must produce
+identical results, ask Jolt for cross-platform determinism:
+
+```ts
+const world = await World.create({
+  gravity: [0, -9.81, 0],
+  deterministic: "cross-platform",
+});
+```
+
+See [Network Sync](/jolt-ts-character-controller/advanced/network-sync/) for why this matters.
+
+### Controlling the WebAssembly runtime
+
+`World.create` will load the Jolt WASM module on demand. In a browser bundle you
+may want to load it explicitly (for example to control the build variant or to
+pre-warm it), then hand the runtime to every world you create:
+
+<Steps>
+
+1. Load the runtime once at startup:
+
+   ```ts
+   import { loadJolt, World } from "jolt-ts";
+
+   const runtime = await loadJolt({ build: "wasm" });
+   ```
+
+2. Pass it into each world:
+
+   ```ts
+   const world = await World.create({
+     runtime,
+     gravity: [0, -9.81, 0],
+   });
+   ```
+
+</Steps>
+
+:::tip[Bundler asset handling]
+`jolt-ts` ships a `.wasm` asset. Bundlers like Vite serve it automatically, but
+for other setups you may need to make the WASM file available to the browser.
+Refer to the `jolt-ts` documentation for build-tool specifics — this library
+does not change how Jolt is loaded.
+:::
+
+## Next
+
+You now have a world and a floor. Continue to the
+[Quick Start](/jolt-ts-character-controller/getting-started/quick-start/) to drop in a keyboard-controlled
+character.

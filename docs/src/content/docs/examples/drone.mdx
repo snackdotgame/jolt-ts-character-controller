@@ -1,0 +1,43 @@
+---
+title: Flying a drone
+description: A multirotor Vehicle flying an autonomous waypoint patrol in POSITION control mode with setTarget.
+---
+
+import PhysicsDemo from "../../../components/PhysicsDemo.astro";
+
+A quadcopter `Vehicle` in **POSITION** control mode. It flies itself between four
+waypoints with `setTarget` — no manual throttle or attitude input. The four
+propellers auto-mix a hover throttle to fight gravity, and the rotor disks spin
+in proportion to each propeller's throttle.
+
+<PhysicsDemo demo="drone" hint="Drag to orbit" />
+
+## How it works
+
+```ts
+import { Vehicle } from "jolt-ts-character-controller";
+
+const drone = new Vehicle({
+  world,                        // created with gravity [0, 0, 0]
+  shape: chassisShape,          // a compound: body + four rotor mounts
+  density: 200,
+  enableCustomGravity: true,
+  gravityField: () => ({ x: 0, y: -9.81, z: 0 }),
+  droneConfig: { controlMode: "POSITION", maxHorizSpeed: 12, maxTiltAngle: Math.PI / 5 },
+});
+
+// A quad alternates torque direction across diagonals to cancel net yaw.
+drone.addPropeller({ position: [1, -0.05, 1], maxThrust: 5000, torqueRatio: 0.6, invertTorque: true });
+// …three more…
+
+const waypoints = [[4, 3, 4], [-4, 4.5, 4], [-4, 3, -4], [4, 5, -4]];
+function fixedStep(dt) {
+  drone.setTarget({ x, y, z }, heading); // current waypoint
+  drone.step(dt);
+  world.step(dt);
+}
+```
+
+## See also
+
+- [Drones](/jolt-ts-character-controller/vehicles/drones/) — propellers, VELOCITY vs POSITION control, and drone tuning.

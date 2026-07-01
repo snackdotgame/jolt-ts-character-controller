@@ -29,8 +29,8 @@ export type ReadonlyMovementInput = Readonly<Omit<MovementInput, "joystick">> & 
 
 export type GroundDetectionMode = "shapeCast" | "rayCast";
 
-export interface EcctrlUserDataType {
-  ecctrl?: {
+export interface ControllerUserData {
+  controller?: {
     excludeRay?: boolean;
     excludeCharacterRay?: boolean;
     excludeVehicleRay?: boolean;

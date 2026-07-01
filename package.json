@@ -1,6 +1,6 @@
 {
   "name": "jolt-ts-character-controller",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Imperative Ecctrl-style character and vehicle controllers for jolt-ts.",
   "type": "module",
   "packageManager": "pnpm@10.33.2",
@@ -44,7 +44,7 @@
   "bugs": {
     "url": "https://github.com/snackdotgame/jolt-ts-character-controller/issues"
   },
-  "homepage": "https://github.com/snackdotgame/jolt-ts-character-controller#readme",
+  "homepage": "https://snackdotgame.github.io/jolt-ts-character-controller/",
   "dependencies": {
     "jolt-ts": "^0.1.0",
     "three": "^0.184.0"

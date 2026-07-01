@@ -47,12 +47,12 @@ import {
 import { GLTFLoader, type GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
 import {
-  createEcctrlJoltAnimationStateController,
-  EcctrlJoltController,
-  EcctrlJoltVehicle,
-  EcctrlThreeAnimationController,
-  type EcctrlJoltShapeCastWheel,
-  type EcctrlJoltThrustPropeller
+  createCharacterAnimationStateController,
+  CharacterController,
+  Vehicle,
+  ThreeAnimationController,
+  type ShapeCastWheel,
+  type ThrustPropeller
 } from "./index.js";
 import { vectorFromLike } from "./math.js";
 import { createDefaultDemoSettings, mountDemoSettings, type DemoSettings, type VehicleSettings } from "./demoSettings.js";
@@ -214,7 +214,7 @@ function applyInitialSettingsParams(settings: DemoSettings): void {
 }
 
 function setAllCustomGravity(settings: DemoSettings, enabled: boolean): void {
-  settings.ecctrl.enableCustomGravity = enabled;
+  settings.character.enableCustomGravity = enabled;
   settings.vehicles.vehicle1.enableCustomGravity = enabled;
   settings.vehicles.vehicle2.enableCustomGravity = enabled;
   settings.vehicles.vehicle3.enableCustomGravity = enabled;
@@ -236,7 +236,7 @@ function parseVector3Param(value: string | null): [number, number, number] | nul
   return [parsed[0], parsed[1], parsed[2]];
 }
 
-type ActiveController = "ecctrl" | "vehicle1" | "vehicle2" | "vehicle3";
+type ActiveController = "character" | "vehicle1" | "vehicle2" | "vehicle3";
 type MeshMap = Map<string, Mesh<BufferGeometry, Material | Material[]>>;
 const CAMERA_CONTROLS_THREE = {
   Vector2,
@@ -250,7 +250,7 @@ const CAMERA_CONTROLS_THREE = {
   Raycaster
 };
 
-class EcctrlCameraControlsImpl extends CameraControls {
+class CameraControlsImpl extends CameraControls {
   private readonly oldUp = new Vector3(0, 1, 0);
   private readonly newUp = new Vector3(0, 1, 0);
   private readonly pivotXAxis = new Vector3();
@@ -301,12 +301,12 @@ interface StaticMeshOptions {
 }
 
 interface VehicleVisual {
-  readonly vehicle: EcctrlJoltVehicle;
+  readonly vehicle: Vehicle;
   readonly group: Group;
   readonly lastBodyControlPosition: Vector3;
   readonly lastBodyControlRotation: Vector3;
   readonly wheelVisuals: {
-    readonly wheel: EcctrlJoltShapeCastWheel;
+    readonly wheel: ShapeCastWheel;
     readonly xSign: 1 | -1;
     readonly zSign: 1 | -1;
     readonly pivot: Group;
@@ -315,7 +315,7 @@ interface VehicleVisual {
     readonly debug: WheelDebugVisual;
   }[];
   readonly propellerVisuals: {
-    readonly propeller: EcctrlJoltThrustPropeller;
+    readonly propeller: ThrustPropeller;
     readonly xSign: 1 | -1;
     readonly zSign: 1 | -1;
     readonly pivot: Group;
@@ -325,7 +325,7 @@ interface VehicleVisual {
   }[];
 }
 
-type VehicleControllerName = Exclude<ActiveController, "ecctrl">;
+type VehicleControllerName = Exclude<ActiveController, "character">;
 
 interface VehicleAccessSensorBase {
   readonly name: VehicleControllerName;
@@ -439,7 +439,7 @@ interface DemoDebugApi {
 
 declare global {
   interface Window {
-    __ecctrlJoltDemo?: DemoDebugApi;
+    __characterControllerDemo?: DemoDebugApi;
   }
 }
 
@@ -499,7 +499,7 @@ interface CharacterModel {
   readonly object: Object3D;
   readonly mixer: AnimationMixer | null;
   readonly actions: Map<string, AnimationAction>;
-  animation: EcctrlThreeAnimationController | null;
+  animation: ThreeAnimationController | null;
 }
 
 interface AnimationFinishedEvent {
@@ -510,12 +510,12 @@ const app = document.querySelector<HTMLDivElement>("#app");
 if (!app) throw new Error("Missing #app root");
 
 const demoDebugElement = document.createElement("script");
-demoDebugElement.id = "ecctrl-jolt-demo-debug";
+demoDebugElement.id = "character-controller-demo-debug";
 demoDebugElement.type = "application/json";
 app.appendChild(demoDebugElement);
 
 const coarsePointerMedia = window.matchMedia("(pointer: coarse)");
-const controlUi = createEcctrlOverlay(app);
+const controlUi = createOverlay(app);
 const demoSettings = createDefaultDemoSettings();
 applyInitialSettingsParams(demoSettings);
 
@@ -541,7 +541,7 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = PCFShadowMap;
 app.appendChild(renderer.domElement);
-const cameraControls = new EcctrlCameraControlsImpl(camera, renderer.domElement);
+const cameraControls = new CameraControlsImpl(camera, renderer.domElement);
 cameraControls.minPolarAngle = 0.1;
 cameraControls.maxPolarAngle = Math.PI - 0.1;
 cameraControls.smoothTime = demoSettings.camera.smoothTime;
@@ -616,13 +616,13 @@ const capsuleFallbackModel = createCapsuleModel(capsuleGltf);
 characterRoot.add(characterModel.object);
 characterRoot.add(capsuleFallbackModel);
 
-const controller = new EcctrlJoltController({
+const controller = new CharacterController({
   world,
   position: CHARACTER_START,
   density: 200,
   motionQuality: "linearCast",
-  allowSleeping: demoSettings.ecctrl.canSleep,
-  enableCustomGravity: demoSettings.ecctrl.enableCustomGravity,
+  allowSleeping: demoSettings.character.canSleep,
+  enableCustomGravity: demoSettings.character.enableCustomGravity,
   gravityField,
   useCustomForward: true,
   maxWalkVel: 1.1,
@@ -641,16 +641,16 @@ const controller = new EcctrlJoltController({
   autoBalanceDampingC: 3,
   autoBalanceSpringOnY: 8,
   autoBalanceDampingOnY: 0.76,
-  massRatioFallOffCurveData: demoSettings.ecctrl.massRatioFallOffCurveData
+  massRatioFallOffCurveData: demoSettings.character.massRatioFallOffCurveData
 });
-controller.body.userData = { ecctrl: { excludeVehicleRay: true } };
+controller.body.userData = { controller: { excludeVehicleRay: true } };
 registerPhysicsDebugBody(controller.body, Shape.capsule({
   halfHeight: controller.options.capsuleHalfHeight,
   radius: controller.options.capsuleRadius
 }));
 if (characterModel.mixer) {
-  const animation = new EcctrlThreeAnimationController({
-    stateController: createEcctrlJoltAnimationStateController(controller),
+  const animation = new ThreeAnimationController({
+    stateController: createCharacterAnimationStateController(controller),
     actions: characterModel.actions,
     getTimeScale: () => demoSettings.world.slowMotion,
     autoplayInitialAction: false
@@ -726,7 +726,7 @@ const demoSettingsHandle = mountDemoSettings(app, demoSettings, {
   flipVehicle3: () => flipVehicle(vehicle3.vehicle.body)
 });
 
-let activeController: ActiveController = "ecctrl";
+let activeController: ActiveController = "character";
 const pressedKeyCodes = new Set<string>();
 const keyState = {
   W: false,
@@ -746,7 +746,7 @@ const touchInput: TouchInputState = {
   buttons: { b1: false, b2: false, b3: false, b4: false }
 };
 const zeroJoystick = { x: 0, y: 0 };
-const ecctrlMovementInput: MovementInput = {
+const characterMovementInput: MovementInput = {
   forward: false,
   backward: false,
   leftward: false,
@@ -755,7 +755,7 @@ const ecctrlMovementInput: MovementInput = {
   run: false,
   jump: false
 };
-const ecctrlIdleInput: MovementInput = {
+const characterIdleInput: MovementInput = {
   forward: false,
   backward: false,
   leftward: false,
@@ -807,7 +807,7 @@ const droneIdleInput: VehicleInput = {
 let demoDebugFrameCounter = 0;
 
 function installDemoDebugApi(): void {
-  window.__ecctrlJoltDemo = {
+  window.__characterControllerDemo = {
     snapshot: createDemoDebugSnapshot
   };
 }
@@ -892,7 +892,7 @@ function snapshotControllerGravity(): DemoGravitySnapshot {
   };
 }
 
-function snapshotVehicleGravity(vehicle: EcctrlJoltVehicle): DemoGravitySnapshot {
+function snapshotVehicleGravity(vehicle: Vehicle): DemoGravitySnapshot {
   const vehicleSnapshot = vehicle.snapshot();
   return {
     enableCustomGravity: vehicle.options.enableCustomGravity,
@@ -906,7 +906,7 @@ function snapshotAnimation(): DemoAnimationSnapshot {
   const animation = characterModel.animation;
   const activeAction = animation?.active ?? null;
   return {
-    enabled: demoSettings.ecctrl.animatedCharacter && !demoSettings.world.pausedPhysics && demoSettings.ecctrl.enable,
+    enabled: demoSettings.character.animatedCharacter && !demoSettings.world.pausedPhysics && demoSettings.character.enable,
     state: animation?.stateController.state ?? null,
     activeAction: animation?.activeActionName ?? null,
     previousAction: animation?.previousClipName ?? null,
@@ -983,7 +983,7 @@ renderer.setAnimationLoop((now) => {
   if (simulationDelta > 0) stepSimulation(simulationDelta);
 
   syncRender(simulationDelta, frameDelta);
-  if (!demoSettings.world.pausedPhysics && demoSettings.ecctrl.enable && demoSettings.ecctrl.animatedCharacter) {
+  if (!demoSettings.world.pausedPhysics && demoSettings.character.enable && demoSettings.character.animatedCharacter) {
     const mixer = characterModel.mixer;
     if (mixer) {
       const mixerTimeScale = demoSettings.world.slowMotion;
@@ -1009,27 +1009,27 @@ function stepSimulation(deltaTime: number): void {
   camera.getWorldDirection(cameraForward);
   if (cameraForward.lengthSq() === 0) cameraForward.set(0, 0, 1);
 
-  if (activeController === "ecctrl") {
+  if (activeController === "character") {
     controller.setForwardDirection(
-      demoSettings.ecctrl.useCameraForward ? cameraForward : controller.bodyZAxis,
+      demoSettings.character.useCameraForward ? cameraForward : controller.bodyZAxis,
       camera.up
     );
-    ecctrlMovementInput.forward = keyState.W || keyState.Up;
-    ecctrlMovementInput.backward = keyState.S || keyState.Down;
-    ecctrlMovementInput.leftward = keyState.A || keyState.Left;
-    ecctrlMovementInput.rightward = keyState.D || keyState.Right;
-    ecctrlMovementInput.run = keyState.Shift || touchInput.buttons.b1;
-    ecctrlMovementInput.jump = keyState.Space || touchInput.buttons.b2;
-    controller.setMovement(ecctrlMovementInput);
+    characterMovementInput.forward = keyState.W || keyState.Up;
+    characterMovementInput.backward = keyState.S || keyState.Down;
+    characterMovementInput.leftward = keyState.A || keyState.Left;
+    characterMovementInput.rightward = keyState.D || keyState.Right;
+    characterMovementInput.run = keyState.Shift || touchInput.buttons.b1;
+    characterMovementInput.jump = keyState.Space || touchInput.buttons.b2;
+    controller.setMovement(characterMovementInput);
     controller.step(deltaTime);
   } else {
-    controller.setMovement(ecctrlIdleInput);
+    controller.setMovement(characterIdleInput);
   }
 
   const carInput = updateCarInput();
   vehicle1.vehicle.setMovement(activeController === "vehicle1" ? carInput : carIdleInput);
   vehicle2.vehicle.setMovement(activeController === "vehicle2" ? carInput : carIdleInput);
-  if (activeController === "ecctrl") {
+  if (activeController === "character") {
     vehicle3.vehicle.setTarget(vehicle3.vehicle.currPos.lengthSq() === 0 ? VEHICLE3_IDLE_TARGET : vehicle3.vehicle.currPos, vehicle3.vehicle.bodyZ);
   }
   vehicle3.vehicle.setMovement(activeController === "vehicle3" ? updateDroneInput() : droneIdleInput);
@@ -1045,9 +1045,9 @@ function stepSimulation(deltaTime: number): void {
 
 function syncRender(deltaTime: number, frameDelta: number): void {
   syncBodyObject(controller.body, characterRoot);
-  characterRoot.visible = activeController === "ecctrl";
-  characterModel.object.visible = demoSettings.ecctrl.animatedCharacter;
-  capsuleFallbackModel.visible = !demoSettings.ecctrl.animatedCharacter;
+  characterRoot.visible = activeController === "character";
+  characterModel.object.visible = demoSettings.character.animatedCharacter;
+  capsuleFallbackModel.visible = !demoSettings.character.animatedCharacter;
   for (const renderBody of renderBodies) syncBodyObject(renderBody.body, renderBody.object);
   syncInstancedBodies();
   updatePhysicsDebug();
@@ -1070,54 +1070,54 @@ function applyLiveSettings(): void {
     LAST_WORLD_GRAVITY.set(gravityX, gravityY, gravityZ);
   }
 
-  const ecctrl = demoSettings.ecctrl;
-  const characterMassRatioCurveChanged = controller.options.massRatioFallOffCurveData !== ecctrl.massRatioFallOffCurveData;
-  controller.options.enable = ecctrl.enable;
-  controller.options.allowSleeping = ecctrl.canSleep;
-  controller.options.capsuleHalfHeight = ecctrl.capsuleHalfHeight;
-  controller.options.capsuleRadius = ecctrl.capsuleRadius;
-  controller.options.useCustomForward = !ecctrl.useCameraForward;
-  controller.options.useCharacterUpAxis = ecctrl.useCharacterUpForForward;
-  controller.options.enableCustomGravity = ecctrl.enableCustomGravity;
-  controller.options.gravityDirLerpSpeed = ecctrl.gravityDirLerpSpeed;
-  controller.options.maxWalkVel = ecctrl.maxWalkVel;
-  controller.options.maxRunVel = ecctrl.maxRunVel;
-  controller.options.accDeltaTime = ecctrl.accDeltaTime;
-  controller.options.decDeltaTime = ecctrl.decDeltaTime;
-  controller.options.rejectVelFactor = ecctrl.rejectVelFactor;
-  controller.options.moveImpulsePointOffset = ecctrl.moveImpulsePointOffset;
-  controller.options.jumpVel = ecctrl.jumpVel;
-  controller.options.jumpDuration = ecctrl.jumpDuration;
-  controller.options.slopeJumpFactor = ecctrl.slopeJumpFactor;
-  controller.options.airDragFactor = ecctrl.airDragFactor;
-  controller.options.slideGripFactor = ecctrl.slideGripFactor;
-  controller.options.platformGripFactor = ecctrl.platformGripFactor;
-  controller.options.fallingGravityScale = ecctrl.fallingGravityScale;
-  controller.options.fallingMaxVel = ecctrl.fallingMaxVel;
-  controller.options.enableToggleRun = ecctrl.enableToggleRun;
-  controller.options.groundDetection = ecctrl.groundDetection;
-  controller.options.slopeMaxAngle = ecctrl.slopeMaxAngle;
-  controller.options.floatHeight = ecctrl.floatHeight;
-  controller.options.rayOriginOffest = ecctrl.rayOriginOffest;
-  controller.options.rayHitForgiveness = ecctrl.rayHitForgiveness;
-  controller.options.rayLength = ecctrl.rayLength;
-  controller.options.rayRadius = ecctrl.rayRadius;
-  controller.options.springK = ecctrl.springK;
-  controller.options.dampingC = ecctrl.dampingC;
-  controller.options.autoBalance = ecctrl.autoBalance;
-  controller.options.autoBalanceSpringK = ecctrl.autoBalanceSpringK;
-  controller.options.autoBalanceDampingC = ecctrl.autoBalanceDampingC;
-  controller.options.autoBalanceSpringOnY = ecctrl.autoBalanceSpringOnY;
-  controller.options.autoBalanceDampingOnY = ecctrl.autoBalanceDampingOnY;
-  controller.options.followPlatform = ecctrl.followPlatform;
-  controller.options.massRatioFallOffCurveData = ecctrl.massRatioFallOffCurveData;
-  controller.options.applyCounterMass = ecctrl.applyCounterMass;
-  controller.options.applyCounterJumpImp = ecctrl.applyCounterJumpImp;
-  controller.options.counterJumpImpFactor = ecctrl.counterJumpImpFactor;
-  controller.options.applyCounterMoveImp = ecctrl.applyCounterMoveImp;
-  controller.options.counterMoveImpFactor = ecctrl.counterMoveImpFactor;
+  const character = demoSettings.character;
+  const characterMassRatioCurveChanged = controller.options.massRatioFallOffCurveData !== character.massRatioFallOffCurveData;
+  controller.options.enable = character.enable;
+  controller.options.allowSleeping = character.canSleep;
+  controller.options.capsuleHalfHeight = character.capsuleHalfHeight;
+  controller.options.capsuleRadius = character.capsuleRadius;
+  controller.options.useCustomForward = !character.useCameraForward;
+  controller.options.useCharacterUpAxis = character.useCharacterUpForForward;
+  controller.options.enableCustomGravity = character.enableCustomGravity;
+  controller.options.gravityDirLerpSpeed = character.gravityDirLerpSpeed;
+  controller.options.maxWalkVel = character.maxWalkVel;
+  controller.options.maxRunVel = character.maxRunVel;
+  controller.options.accDeltaTime = character.accDeltaTime;
+  controller.options.decDeltaTime = character.decDeltaTime;
+  controller.options.rejectVelFactor = character.rejectVelFactor;
+  controller.options.moveImpulsePointOffset = character.moveImpulsePointOffset;
+  controller.options.jumpVel = character.jumpVel;
+  controller.options.jumpDuration = character.jumpDuration;
+  controller.options.slopeJumpFactor = character.slopeJumpFactor;
+  controller.options.airDragFactor = character.airDragFactor;
+  controller.options.slideGripFactor = character.slideGripFactor;
+  controller.options.platformGripFactor = character.platformGripFactor;
+  controller.options.fallingGravityScale = character.fallingGravityScale;
+  controller.options.fallingMaxVel = character.fallingMaxVel;
+  controller.options.enableToggleRun = character.enableToggleRun;
+  controller.options.groundDetection = character.groundDetection;
+  controller.options.slopeMaxAngle = character.slopeMaxAngle;
+  controller.options.floatHeight = character.floatHeight;
+  controller.options.rayOriginOffest = character.rayOriginOffest;
+  controller.options.rayHitForgiveness = character.rayHitForgiveness;
+  controller.options.rayLength = character.rayLength;
+  controller.options.rayRadius = character.rayRadius;
+  controller.options.springK = character.springK;
+  controller.options.dampingC = character.dampingC;
+  controller.options.autoBalance = character.autoBalance;
+  controller.options.autoBalanceSpringK = character.autoBalanceSpringK;
+  controller.options.autoBalanceDampingC = character.autoBalanceDampingC;
+  controller.options.autoBalanceSpringOnY = character.autoBalanceSpringOnY;
+  controller.options.autoBalanceDampingOnY = character.autoBalanceDampingOnY;
+  controller.options.followPlatform = character.followPlatform;
+  controller.options.massRatioFallOffCurveData = character.massRatioFallOffCurveData;
+  controller.options.applyCounterMass = character.applyCounterMass;
+  controller.options.applyCounterJumpImp = character.applyCounterJumpImp;
+  controller.options.counterJumpImpFactor = character.counterJumpImpFactor;
+  controller.options.applyCounterMoveImp = character.applyCounterMoveImp;
+  controller.options.counterMoveImpFactor = character.counterMoveImpFactor;
   if (characterMassRatioCurveChanged) controller.refreshMassRatioFallOffCurve();
-  controller.body.setAllowSleeping(ecctrl.canSleep);
+  controller.body.setAllowSleeping(character.canSleep);
   applyCarVehicleSettings(vehicle1, demoSettings.vehicles.vehicle1);
   applyCarVehicleSettings(vehicle2, demoSettings.vehicles.vehicle2);
   applyDroneVehicleSettings(vehicle3, demoSettings.vehicles.vehicle3);
@@ -1187,7 +1187,7 @@ function applyCarVehicleSettings(visual: VehicleVisual, settings: VehicleSetting
   }
 }
 
-function applyWheelSettings(wheel: EcctrlJoltShapeCastWheel, settings: VehicleSettings, frontWheel: boolean): void {
+function applyWheelSettings(wheel: ShapeCastWheel, settings: VehicleSettings, frontWheel: boolean): void {
   const wheelSettings = settings.wheel;
   const configChanged =
     wheel.options.rayShapeR !== wheelSettings.rayShapeR ||
@@ -1372,7 +1372,7 @@ function createCarVehicle(config: {
 }): VehicleVisual {
   const vehicleSettings = config.name === "vehicle1" ? demoSettings.vehicles.vehicle1 : demoSettings.vehicles.vehicle2;
   const vehicleRotation = new Quaternion().setFromEuler(new Euler(...vehicleSettings.rotation));
-  const vehicle = new EcctrlJoltVehicle({
+  const vehicle = new Vehicle({
     world,
     shape: config.shape,
     position: vehicleSettings.position,
@@ -1385,7 +1385,7 @@ function createCarVehicle(config: {
     carConfig: {
       ...vehicleSettings.car
     },
-    userData: { ecctrl: { excludeCharacterRay: true } }
+    userData: { controller: { excludeCharacterRay: true } }
   });
   registerPhysicsDebugBody(vehicle.body, config.shape);
   const group = new Group();
@@ -1490,7 +1490,7 @@ function createDroneVehicle(): VehicleVisual {
     { shape: Shape.cylinder({ halfHeight: 0.05, radius: 0.65 }), position: [-1, -0.15, 1] },
     { shape: Shape.cylinder({ halfHeight: 0.05, radius: 0.65 }), position: [-1, -0.15, -1] }
   ]);
-  const vehicle = new EcctrlJoltVehicle({
+  const vehicle = new Vehicle({
     world,
     shape: bodyShape,
     position: demoSettings.vehicles.vehicle3.position,
@@ -1503,7 +1503,7 @@ function createDroneVehicle(): VehicleVisual {
     droneConfig: {
       ...demoSettings.vehicles.vehicle3.drone
     },
-    userData: { ecctrl: { excludeCharacterRay: true } }
+    userData: { controller: { excludeCharacterRay: true } }
   });
   registerPhysicsDebugBody(vehicle.body, bodyShape);
   vehicle.setTarget(VEHICLE3_IDLE_TARGET, FIXED_Z);
@@ -1779,7 +1779,7 @@ function isShapeDescriptor(shape: ShapeInput): shape is ShapeDescriptor {
 
 function addWheelVisual(
   group: Group,
-  wheel: EcctrlJoltShapeCastWheel,
+  wheel: ShapeCastWheel,
   position: readonly [number, number, number],
   xSign: 1 | -1,
   zSign: 1 | -1
@@ -1802,7 +1802,7 @@ function addWheelVisual(
 
 function addPropellerVisual(
   group: Group,
-  propeller: EcctrlJoltThrustPropeller,
+  propeller: ThrustPropeller,
   position: readonly [number, number, number],
   xSign: 1 | -1,
   zSign: 1 | -1
@@ -1857,14 +1857,14 @@ function syncVehicleVisual(visual: VehicleVisual, deltaTime: number): void {
   }
 }
 
-function createCharacterDebug(ctrl: EcctrlJoltController): CharacterDebugVisual {
+function createCharacterDebug(ctrl: CharacterController): CharacterDebugVisual {
   const capsuleRadius = ctrl.options.capsuleRadius;
   const rayRadius = ctrl.options.rayRadius;
   const rayOriginOffest = ctrl.options.rayOriginOffest;
   const localGroup = new Group();
-  localGroup.name = "EcctrlCharacterDebug";
+  localGroup.name = "CharacterDebug";
   const worldGroup = new Group();
-  worldGroup.name = "EcctrlWorldDebug";
+  worldGroup.name = "WorldDebug";
 
   const forwardRingGeo = new RingGeometry(capsuleRadius * 2, capsuleRadius * 2.1, 32);
   const forwardPointerGeo = new PlaneGeometry(capsuleRadius / 2, capsuleRadius / 2);
@@ -1924,9 +1924,9 @@ function createCharacterDebug(ctrl: EcctrlJoltController): CharacterDebugVisual 
 }
 
 function updateCharacterDebug(debug: CharacterDebugVisual): void {
-  debug.worldGroup.visible = activeController === "ecctrl" && demoSettings.ecctrl.debug;
-  debug.localGroup.visible = activeController === "ecctrl" && demoSettings.ecctrl.debug;
-  if (activeController !== "ecctrl" || !demoSettings.ecctrl.debug) return;
+  debug.worldGroup.visible = activeController === "character" && demoSettings.character.debug;
+  debug.localGroup.visible = activeController === "character" && demoSettings.character.debug;
+  if (activeController !== "character" || !demoSettings.character.debug) return;
 
   const position = TEMP_VEC_A.copy(controller.currPos);
   const up = TEMP_VEC_B.copy(controller.upAxis).normalize();
@@ -1955,7 +1955,7 @@ function updateCharacterDebug(debug: CharacterDebugVisual): void {
   setArrow(debug.velocityArrow, relativeVelocity, relativeVelocity.length() / (controller.runActive ? controller.options.maxRunVel : controller.options.maxWalkVel));
 }
 
-function createWheelDebug(wheel: EcctrlJoltShapeCastWheel): WheelDebugVisual {
+function createWheelDebug(wheel: ShapeCastWheel): WheelDebugVisual {
   const rayShapeR = wheel.options.rayShapeR;
   const rayShapeH = wheel.options.rayShapeH;
   const rayLength = wheel.options.rayLength;
@@ -2017,7 +2017,7 @@ function createWheelDebug(wheel: EcctrlJoltShapeCastWheel): WheelDebugVisual {
   return { localGroup, worldGroup, shapeCastGroup, rayCastGroup, hitPoint, floatArrow, driftArrow, engineArrow };
 }
 
-function updateWheelDebug(debug: WheelDebugVisual, wheel: EcctrlJoltShapeCastWheel, settings: VehicleSettings): void {
+function updateWheelDebug(debug: WheelDebugVisual, wheel: ShapeCastWheel, settings: VehicleSettings): void {
   const hasHit = Boolean(wheel.hitBody);
   const scale = settings.wheel.debuggerArrowScale;
   debug.localGroup.visible = settings.wheel.debug;
@@ -2035,7 +2035,7 @@ function updateWheelDebug(debug: WheelDebugVisual, wheel: EcctrlJoltShapeCastWhe
   setArrow(debug.engineArrow, TEMP_VEC_C.copy(wheel.longitudinalFrictionImpulse), hasHit ? wheel.longitudinalFrictionImpulse.length() * scale : 0);
 }
 
-function createPropellerDebug(propeller: EcctrlJoltThrustPropeller): PropellerDebugVisual {
+function createPropellerDebug(propeller: ThrustPropeller): PropellerDebugVisual {
   const debuggerScale = 1;
   const localGroup = new Group();
   localGroup.name = `${propeller.options.name || "propeller"}Debug`;
@@ -2073,7 +2073,7 @@ function createPropellerDebug(propeller: EcctrlJoltThrustPropeller): PropellerDe
   return { localGroup, thrustArrow, torqueArrow };
 }
 
-function updatePropellerDebug(debug: PropellerDebugVisual, propeller: EcctrlJoltThrustPropeller, settings: VehicleSettings): void {
+function updatePropellerDebug(debug: PropellerDebugVisual, propeller: ThrustPropeller, settings: VehicleSettings): void {
   debug.localGroup.visible = settings.propeller.debug;
   debug.localGroup.scale.setScalar(settings.propeller.debuggerScale);
   debug.thrustArrow.setLength(propeller.finalThrottle * settings.propeller.debuggerArrowScale);
@@ -2132,7 +2132,7 @@ function createCapsuleModel(capsule: GLTF): Object3D {
 }
 
 function updateAnimation(): void {
-  if (!demoSettings.ecctrl.animatedCharacter || demoSettings.world.pausedPhysics || !demoSettings.ecctrl.enable) return;
+  if (!demoSettings.character.animatedCharacter || demoSettings.world.pausedPhysics || !demoSettings.character.enable) return;
   characterModel.animation?.update();
 }
 
@@ -2148,14 +2148,14 @@ function updateCamera(deltaTime: number): void {
   const rotation = body.rotation();
   const bodyQuat = TEMP_QUAT_A.set(rotation.x, rotation.y, rotation.z, rotation.w);
   const bodyY = TEMP_VEC_B.set(0, 1, 0).applyQuaternion(bodyQuat).normalize();
-  const up = activeController === "ecctrl"
+  const up = activeController === "character"
     ? TEMP_VEC_C.copy(controller.upAxis)
     : activeController === "vehicle1"
       ? TEMP_VEC_C.copy(vehicle1.vehicle.up)
       : activeController === "vehicle2"
         ? TEMP_VEC_C.copy(vehicle2.vehicle.up)
         : TEMP_VEC_C.copy(vehicle3.vehicle.up);
-  const forward = activeController === "ecctrl"
+  const forward = activeController === "character"
     ? TEMP_VEC_D.copy(controller.bodyZAxis)
     : activeController === "vehicle1"
       ? TEMP_VEC_D.copy(vehicle1.vehicle.bodyZ)
@@ -2167,7 +2167,7 @@ function updateCamera(deltaTime: number): void {
   camera.up.lerp(up, 0.1).normalize();
   cameraControls.setUp(camera.up);
 
-  if (activeController === "ecctrl" && controller.isOnPlatform) {
+  if (activeController === "character" && controller.isOnPlatform) {
     const cameraCurrDir = TEMP_VEC_E;
     const cameraFinalDir = TEMP_VEC_F;
     const cameraTurnCrossAxis = TEMP_VEC_G;
@@ -2185,7 +2185,7 @@ function updateCamera(deltaTime: number): void {
     }
   }
 
-  if (activeController !== "ecctrl" && cameraControls.currentAction === CameraControls.ACTION.NONE) {
+  if (activeController !== "character" && cameraControls.currentAction === CameraControls.ACTION.NONE) {
     const cameraCurrDir = TEMP_VEC_E;
     const cameraFinalDir = TEMP_VEC_F;
     const cameraTurnCrossAxis = TEMP_VEC_G;
@@ -2206,7 +2206,7 @@ function updateCamera(deltaTime: number): void {
 }
 
 function resetPlayer(): void {
-  activeController = "ecctrl";
+  activeController = "character";
   controller.body.setTranslation(CHARACTER_START, { activate: true });
   controller.body.setRotation([0, 0, 0, 1], { activate: true });
   controller.body.setLinearVelocity([0, 0, 0]);
@@ -2234,7 +2234,7 @@ function flipVehicle(body: Body): void {
 }
 
 function toggleVehicleAccess(): void {
-  if (activeController !== "ecctrl") {
+  if (activeController !== "character") {
     exitVehicle();
     return;
   }
@@ -2245,7 +2245,7 @@ function toggleVehicleAccess(): void {
 }
 
 function enterVehicle(sensor: VehicleAccessSensor): void {
-  if (activeController !== "ecctrl") return;
+  if (activeController !== "character") return;
   const vehicle = sensor.visual.vehicle;
   activeController = sensor.name;
   controller.body.setTranslation([0, -1000, 0], { activate: false });
@@ -2276,7 +2276,7 @@ function exitVehicle(): void {
   controller.body.setTranslation(pos, { activate: true });
   controller.body.setRotation(quaternionTuple(quat), { activate: true });
   controller.body.setLinearVelocity(vehicle.body.linearVelocity());
-  activeController = "ecctrl";
+  activeController = "character";
   demoSettingsHandle.setDroneControlMode("POSITION");
   vehicle3.vehicle.options.droneConfig.controlMode = "POSITION";
   vehicle3.vehicle.setTarget(vehicle3.vehicle.currPos, vehicle3.vehicle.bodyZ);
@@ -2303,7 +2303,7 @@ function applyInitialControllerParam(): void {
 applyInitialControllerParam();
 
 function nearestVehicleAccessSensor(): VehicleAccessSensor | null {
-  if (activeController !== "ecctrl") return null;
+  if (activeController !== "character") return null;
   let nearestSensor: VehicleAccessSensor | null = null;
   let nearestSignedDistance = Infinity;
   for (const sensor of vehicleAccessSensors) {
@@ -2333,7 +2333,7 @@ function setCharacterCapsuleSegment(start: Vector3, end: Vector3): void {
   end.copy(ACCESS_CHARACTER_CENTER).addScaledVector(ACCESS_CHARACTER_AXIS, -controller.options.capsuleHalfHeight);
 }
 
-function setVehicleLocalCapsule(vehicle: EcctrlJoltVehicle, start: Vector3, end: Vector3): void {
+function setVehicleLocalCapsule(vehicle: Vehicle, start: Vector3, end: Vector3): void {
   const translation = vehicle.body.translation();
   const rotation = vehicle.body.rotation();
   ACCESS_VEHICLE_POSITION.set(translation.x, translation.y, translation.z);
@@ -2466,15 +2466,15 @@ function updateTouchControls(controls: TouchControls, controllerName = activeCon
   controls.b2.hidden = controllerName === "vehicle3";
   controls.b3.hidden = controllerName !== "vehicle1" && controllerName !== "vehicle2";
 
-  setVirtualButtonLabel(controls.b1, controllerName === "ecctrl" ? "Run" : "Rev");
-  setVirtualButtonLabel(controls.b2, controllerName === "ecctrl" ? "Jump" : "Brake");
+  setVirtualButtonLabel(controls.b1, controllerName === "character" ? "Run" : "Rev");
+  setVirtualButtonLabel(controls.b2, controllerName === "character" ? "Jump" : "Brake");
   setVirtualButtonLabel(controls.b3, "Gas");
-  setVirtualButtonLabel(controls.b4, controllerName === "ecctrl" ? "Enter" : "Exit");
+  setVirtualButtonLabel(controls.b4, controllerName === "character" ? "Enter" : "Exit");
 
   controls.b1.style.right = "100px";
   controls.b1.style.bottom = "30px";
   controls.b2.style.right = "40px";
-  controls.b2.style.bottom = controllerName === "ecctrl" ? "90px" : "70px";
+  controls.b2.style.bottom = controllerName === "character" ? "90px" : "70px";
   controls.b3.style.right = "100px";
   controls.b3.style.bottom = "110px";
   controls.b4.style.right = "40px";
@@ -2483,7 +2483,7 @@ function updateTouchControls(controls: TouchControls, controllerName = activeCon
 
 function createJoystickElement(state: { x: number; y: number }, side: "left" | "right"): HTMLDivElement {
   const wrapper = document.createElement("div");
-  wrapper.id = "ecctrl-joystick";
+  wrapper.id = "character-joystick";
   wrapper.style.cssText = [
     "user-select:none",
     "-moz-user-select:none",
@@ -2584,7 +2584,7 @@ function createJoystickElement(state: { x: number; y: number }, side: "left" | "
 
 function createVirtualButton(id: keyof TouchInputState["buttons"], state: TouchInputState, onAccess: () => void): HTMLDivElement {
   const wrapper = document.createElement("div");
-  wrapper.id = "ecctrl-virtual-button";
+  wrapper.id = "character-virtual-button";
   wrapper.style.cssText = [
     "user-select:none",
     "-moz-user-select:none",
@@ -2670,7 +2670,7 @@ function resetTouchInput(state: TouchInputState): void {
   state.buttons.b4 = false;
 }
 
-function createEcctrlOverlay(root: HTMLElement): ControlUi {
+function createOverlay(root: HTMLElement): ControlUi {
   const prompt = document.createElement("div");
   prompt.className = "interactionPrompt";
   const promptText = document.createElement("span");
@@ -2705,7 +2705,7 @@ function createEcctrlOverlay(root: HTMLElement): ControlUi {
 
 function updateControlUi(ui: ControlUi): void {
   const target = nearestVehicleLabel();
-  ui.prompt.hidden = activeController !== "ecctrl" || !target;
+  ui.prompt.hidden = activeController !== "character" || !target;
   if (target) ui.promptText.textContent = `Enter ${target}`;
 
   const preset = controlHintPreset(activeController);
@@ -2767,7 +2767,7 @@ function controlHintPreset(controllerName: ActiveController): {
     };
   }
   return {
-    name: "ecctrl",
+    name: "character",
     groups: [
       { label: "Move", layout: "directional", keys: [hintKey("W", "KeyW"), hintKey("A", "KeyA"), hintKey("S", "KeyS"), hintKey("D", "KeyD")] },
       { label: "Run", layout: "stack", labelPosition: "inline", bottomLabel: "Jump", keys: [hintKey("Shift", "ShiftLeft ShiftRight Shift"), hintKey("Space", "Space", true)] },
@@ -2836,7 +2836,7 @@ function applyGravityToDynamics(deltaTime: number): void {
 
 function usesCustomGravityField(): boolean {
   return (
-    demoSettings.ecctrl.enableCustomGravity ||
+    demoSettings.character.enableCustomGravity ||
     demoSettings.vehicles.vehicle1.enableCustomGravity ||
     demoSettings.vehicles.vehicle2.enableCustomGravity ||
     demoSettings.vehicles.vehicle3.enableCustomGravity

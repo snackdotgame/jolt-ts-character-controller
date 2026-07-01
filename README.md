@@ -6,10 +6,10 @@ Jolt world, render loop, networking, and asset scene.
 
 ```ts
 import { World } from "jolt-ts";
-import { EcctrlJoltController } from "jolt-ts-character-controller";
+import { CharacterController } from "jolt-ts-character-controller";
 
 const world = await World.create({ gravity: [0, -9.81, 0] });
-const controller = new EcctrlJoltController({
+const controller = new CharacterController({
   world,
   position: [0, 1, 0],
   motionQuality: "linearCast"
@@ -53,11 +53,11 @@ imperative controller, or just as a plain state machine:
 
 ```ts
 import {
-  EcctrlAnimationStateController,
-  createEcctrlJoltAnimationStateController
+  AnimationStateController,
+  createCharacterAnimationStateController
 } from "jolt-ts-character-controller";
 
-const animationState = createEcctrlJoltAnimationStateController(controller, {
+const animationState = createCharacterAnimationStateController(controller, {
   onChange: (state) => {
     console.log(state);
   }
@@ -65,7 +65,7 @@ const animationState = createEcctrlJoltAnimationStateController(controller, {
 
 animationState.update();
 
-const customAnimationState = new EcctrlAnimationStateController({
+const customAnimationState = new AnimationStateController({
   getSnapshot: () => ({
     isOnGround: true,
     isFalling: false,
@@ -81,12 +81,12 @@ For normal Three.js, compose that state controller with your
 
 ```ts
 import {
-  EcctrlThreeAnimationController,
-  createEcctrlJoltAnimationStateController
+  ThreeAnimationController,
+  createCharacterAnimationStateController
 } from "jolt-ts-character-controller";
 
-const threeAnimation = new EcctrlThreeAnimationController({
-  stateController: createEcctrlJoltAnimationStateController(controller),
+const threeAnimation = new ThreeAnimationController({
+  stateController: createCharacterAnimationStateController(controller),
   actions
 });
 
@@ -101,10 +101,10 @@ Vehicles are imperative too:
 
 ```ts
 import { Shape, World } from "jolt-ts";
-import { EcctrlJoltVehicle } from "jolt-ts-character-controller";
+import { Vehicle } from "jolt-ts-character-controller";
 
 const world = await World.create({ gravity: [0, -9.81, 0] });
-const vehicle = new EcctrlJoltVehicle({
+const vehicle = new Vehicle({
   world,
   shape: Shape.box({ halfExtents: [1, 0.4, 2.4] }),
   density: 200,
@@ -125,6 +125,24 @@ world.step(1 / 60);
 `testMap.glb`, `vehicles.glb`, `capsule.glb`, and `AnimationLibrary.glb` are
 served from `public/`, with character, two car, and drone controllers driven by
 the imperative API.
+
+## Documentation
+
+**📚 <https://snackdotgame.github.io/jolt-ts-character-controller/>** — including
+live, interactive physics demos.
+
+The full guides and API reference live in the Astro + Starlight site under
+[`docs/`](docs/) — getting started, the character controller (movement, config,
+custom gravity, moving platforms), animation, cars and drones, network sync, and
+curves. The site is a self-contained pnpm project with its own lockfile, so it
+never touches the published package's dependencies:
+
+```sh
+cd docs
+pnpm install   # first time
+pnpm dev       # preview at http://localhost:4321
+pnpm build     # static output in docs/dist
+```
 
 ## Performance
 

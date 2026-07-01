@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { Shape, type World } from "jolt-ts";
-import { EcctrlJoltVehicle } from "../src/index.js";
+import { Vehicle } from "../src/index.js";
 
 const DT = 1 / 60;
 
@@ -10,7 +10,7 @@ afterEach(() => {
   for (const world of worlds.splice(0)) world.dispose();
 });
 
-describe("EcctrlJoltVehicle", () => {
+describe("Vehicle", () => {
   it("ports Ecctrl car wheel impulses into a Jolt body", async () => {
     const { world, vehicle } = await createFlatCar();
 
@@ -47,7 +47,7 @@ describe("EcctrlJoltVehicle", () => {
       deterministic: "cross-platform"
     });
     worlds.push(world);
-    const vehicle = new EcctrlJoltVehicle({
+    const vehicle = new Vehicle({
       world,
       shape: Shape.box({ halfExtents: [1, 0.4, 2.4] }),
       position: [0, 3, 0],
@@ -98,7 +98,7 @@ describe("EcctrlJoltVehicle", () => {
   });
 });
 
-async function createFlatCar(): Promise<{ world: World; vehicle: EcctrlJoltVehicle }> {
+async function createFlatCar(): Promise<{ world: World; vehicle: Vehicle }> {
   const { World } = await import("jolt-ts");
   const world = await World.create({
     gravity: [0, -9.81, 0],
@@ -112,7 +112,7 @@ async function createFlatCar(): Promise<{ world: World; vehicle: EcctrlJoltVehic
     friction: 0.9
   });
 
-  const vehicle = new EcctrlJoltVehicle({
+  const vehicle = new Vehicle({
     world,
     shape: Shape.box({ halfExtents: [1, 0.4, 2.4] }),
     position: [0, 1.05, 0],
@@ -153,14 +153,14 @@ async function createFlatCar(): Promise<{ world: World; vehicle: EcctrlJoltVehic
   return { world, vehicle };
 }
 
-async function createHoverDrone(options: { allowSleeping?: boolean; controlMode?: "VELOCITY" | "POSITION" } = {}): Promise<{ world: World; vehicle: EcctrlJoltVehicle }> {
+async function createHoverDrone(options: { allowSleeping?: boolean; controlMode?: "VELOCITY" | "POSITION" } = {}): Promise<{ world: World; vehicle: Vehicle }> {
   const { World } = await import("jolt-ts");
   const world = await World.create({
     gravity: [0, 0, 0],
     deterministic: "cross-platform"
   });
   worlds.push(world);
-  const vehicle = new EcctrlJoltVehicle({
+  const vehicle = new Vehicle({
     world,
     shape: Shape.compound([
       { shape: Shape.box({ halfExtents: [0.4, 0.2, 1.5] }) },
@@ -188,7 +188,7 @@ async function createHoverDrone(options: { allowSleeping?: boolean; controlMode?
   return { world, vehicle };
 }
 
-function step(world: World, vehicle: EcctrlJoltVehicle): void {
+function step(world: World, vehicle: Vehicle): void {
   vehicle.update(DT);
   world.step(DT);
 }

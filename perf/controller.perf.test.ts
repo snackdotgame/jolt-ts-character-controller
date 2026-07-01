@@ -1,7 +1,7 @@
 import { performance } from "node:perf_hooks";
 import { describe, expect, it } from "vitest";
 import { Shape, type World } from "jolt-ts";
-import { EcctrlJoltController } from "../src/index.js";
+import { CharacterController } from "../src/index.js";
 
 const DT = 1 / 60;
 const WARMUP_STEPS = 240;
@@ -30,7 +30,7 @@ interface SnapshotPerfResult {
   readonly checksum: number;
 }
 
-describe("EcctrlJoltController performance", () => {
+describe("CharacterController performance", () => {
   it("measures imperative step cost and snapshot overhead", async () => {
     await runControllerScenario("jit-warmup-step", false, 500);
     await runControllerScenario("jit-warmup-update", true, 500);
@@ -139,7 +139,7 @@ async function runSnapshotScenario(): Promise<SnapshotPerfResult> {
   }
 }
 
-async function createPerfController(): Promise<{ world: World; controller: EcctrlJoltController }> {
+async function createPerfController(): Promise<{ world: World; controller: CharacterController }> {
   const { World } = await import("jolt-ts");
   const world = await World.create({
     gravity: [0, -9.81, 0],
@@ -165,7 +165,7 @@ async function createPerfController(): Promise<{ world: World; controller: Ecctr
     });
   }
 
-  const controller = new EcctrlJoltController({
+  const controller = new CharacterController({
     world,
     position: [0, 1, -12],
     enableToggleRun: false,
@@ -176,7 +176,7 @@ async function createPerfController(): Promise<{ world: World; controller: Ecctr
   return { world, controller };
 }
 
-function driveController(controller: EcctrlJoltController, step: number): void {
+function driveController(controller: CharacterController, step: number): void {
   const phase = step % 720;
   controller.setMovement({
     forward: phase < 420,

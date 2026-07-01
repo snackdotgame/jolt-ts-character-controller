@@ -1,9 +1,9 @@
 import { LoopOnce, type AnimationAction } from "three";
 import {
-  type EcctrlAnimationState
+  type AnimationState
 } from "./animation.js";
 
-export const DEFAULT_ECCTRL_THREE_ANIMATION_ACTIONS: Readonly<Record<EcctrlAnimationState, string>> = {
+export const DEFAULT_THREE_ANIMATION_ACTIONS: Readonly<Record<AnimationState, string>> = {
   IDLE: "Idle_Loop",
   WALK: "Walk_Loop",
   RUN: "Jog_Fwd_Loop",
@@ -13,27 +13,27 @@ export const DEFAULT_ECCTRL_THREE_ANIMATION_ACTIONS: Readonly<Record<EcctrlAnima
   JUMP_LAND: "Jump_Land"
 };
 
-export interface EcctrlAnimationStateControllerLike {
-  readonly state: EcctrlAnimationState;
-  update(): EcctrlAnimationState;
-  reset(state?: EcctrlAnimationState, isOnGround?: boolean): void;
+export interface AnimationStateControllerLike {
+  readonly state: AnimationState;
+  update(): AnimationState;
+  reset(state?: AnimationState, isOnGround?: boolean): void;
 }
 
 type AnimationActionLookup =
   | ReadonlyMap<string, AnimationAction>
   | Readonly<Record<string, AnimationAction | undefined>>;
 
-export interface EcctrlThreeAnimationControllerOptions {
-  readonly stateController: EcctrlAnimationStateControllerLike;
+export interface ThreeAnimationControllerOptions {
+  readonly stateController: AnimationStateControllerLike;
   readonly actions: AnimationActionLookup;
-  readonly actionMap?: Partial<Record<EcctrlAnimationState, string>>;
+  readonly actionMap?: Partial<Record<AnimationState, string>>;
   readonly getTimeScale?: () => number;
   readonly autoplayInitialAction?: boolean;
 }
 
-export class EcctrlThreeAnimationController {
-  readonly stateController: EcctrlAnimationStateControllerLike;
-  readonly actionMap: Readonly<Record<EcctrlAnimationState, string>>;
+export class ThreeAnimationController {
+  readonly stateController: AnimationStateControllerLike;
+  readonly actionMap: Readonly<Record<AnimationState, string>>;
   readonly getTimeScale: () => number;
 
   private readonly actions: AnimationActionLookup;
@@ -42,10 +42,10 @@ export class EcctrlThreeAnimationController {
   private activeAction: AnimationAction | null;
   private canPlayNext = true;
 
-  constructor(options: EcctrlThreeAnimationControllerOptions) {
+  constructor(options: ThreeAnimationControllerOptions) {
     this.stateController = options.stateController;
     this.actions = options.actions;
-    this.actionMap = { ...DEFAULT_ECCTRL_THREE_ANIMATION_ACTIONS, ...options.actionMap };
+    this.actionMap = { ...DEFAULT_THREE_ANIMATION_ACTIONS, ...options.actionMap };
     this.getTimeScale = options.getTimeScale ?? (() => 1);
     this.autoplayInitialAction = options.autoplayInitialAction ?? false;
     this.previousActionName = this.actionMap[this.stateController.state];
@@ -56,7 +56,7 @@ export class EcctrlThreeAnimationController {
     }
   }
 
-  update(): EcctrlAnimationState {
+  update(): AnimationState {
     const state = this.stateController.update();
     this.playState(state);
     return state;
@@ -69,7 +69,7 @@ export class EcctrlThreeAnimationController {
     if (clipName === "Jump_Start" || clipName === "Jump_Land") this.canPlayNext = true;
   }
 
-  reset(state: EcctrlAnimationState = "IDLE"): void {
+  reset(state: AnimationState = "IDLE"): void {
     this.stateController.reset(state);
     this.previousActionName = this.actionMap[state];
     this.canPlayNext = true;
@@ -96,7 +96,7 @@ export class EcctrlThreeAnimationController {
     return this.canPlayNext;
   }
 
-  private playState(state: EcctrlAnimationState): void {
+  private playState(state: AnimationState): void {
     const nextActionName = this.actionMap[state];
     const nextAction = this.getAction(nextActionName);
     if (!nextAction) return;

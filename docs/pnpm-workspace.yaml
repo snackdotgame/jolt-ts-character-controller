@@ -1,0 +1,10 @@
+# Standalone workspace root for the docs site. pnpm treats the nearest
+# pnpm-workspace.yaml as the workspace root, so `pnpm install` here stays
+# decoupled from the parent library: the docs site keeps its own lockfile and
+# node_modules, and Astro's dependency tree never touches the published package.
+packages: []
+
+# Approve build scripts for dependencies that ship native / prebuilt binaries.
+allowBuilds:
+  esbuild: true
+  sharp: true
