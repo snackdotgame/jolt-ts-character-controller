@@ -1,37 +1,37 @@
 import { AnimationClip, LoopOnce, type AnimationAction } from "three";
 import { describe, expect, it } from "vitest";
 import {
-  DEFAULT_ECCTRL_THREE_ANIMATION_ACTIONS,
-  EcctrlAnimationStateController,
-  EcctrlThreeAnimationController,
+  DEFAULT_THREE_ANIMATION_ACTIONS,
+  AnimationStateController,
+  ThreeAnimationController,
   animationSnapshotFromControllerSnapshot,
-  resolveEcctrlAnimationState,
-  type EcctrlAnimationSnapshot,
-  type EcctrlAnimationState
+  resolveAnimationState,
+  type AnimationSnapshot,
+  type AnimationState
 } from "../src/index.js";
 
-describe("EcctrlAnimationStateController", () => {
+describe("AnimationStateController", () => {
   it("matches the upstream Ecctrl animation state resolver", () => {
-    expect(resolveEcctrlAnimationState(context({ isOnGround: true, wasOnGround: true }))).toBe("IDLE");
-    expect(resolveEcctrlAnimationState(context({ isOnGround: true, wasOnGround: true, isMoving: true }))).toBe("WALK");
-    expect(resolveEcctrlAnimationState(context({ isOnGround: true, wasOnGround: true, isMoving: true, runActive: true }))).toBe("RUN");
-    expect(resolveEcctrlAnimationState(context({ isOnGround: true, wasOnGround: true, jumpActive: true }))).toBe("JUMP_START");
-    expect(resolveEcctrlAnimationState(context({ isOnGround: false, wasOnGround: true }))).toBe("JUMP_IDLE");
-    expect(resolveEcctrlAnimationState(context({ isOnGround: false, wasOnGround: true, isFalling: true }))).toBe("JUMP_FALL");
-    expect(resolveEcctrlAnimationState(context({ isOnGround: true, wasOnGround: false }))).toBe("JUMP_LAND");
+    expect(resolveAnimationState(context({ isOnGround: true, wasOnGround: true }))).toBe("IDLE");
+    expect(resolveAnimationState(context({ isOnGround: true, wasOnGround: true, isMoving: true }))).toBe("WALK");
+    expect(resolveAnimationState(context({ isOnGround: true, wasOnGround: true, isMoving: true, runActive: true }))).toBe("RUN");
+    expect(resolveAnimationState(context({ isOnGround: true, wasOnGround: true, jumpActive: true }))).toBe("JUMP_START");
+    expect(resolveAnimationState(context({ isOnGround: false, wasOnGround: true }))).toBe("JUMP_IDLE");
+    expect(resolveAnimationState(context({ isOnGround: false, wasOnGround: true, isFalling: true }))).toBe("JUMP_FALL");
+    expect(resolveAnimationState(context({ isOnGround: true, wasOnGround: false }))).toBe("JUMP_LAND");
   });
 
   it("can be driven by plain snapshots without Jolt, Three, React, or DOM", () => {
     const handle = { id: "external-controller" };
-    let snapshot: EcctrlAnimationSnapshot = {
+    let snapshot: AnimationSnapshot = {
       isOnGround: true,
       isFalling: false,
       isMoving: false,
       runActive: false,
       jumpActive: false
     };
-    const changes: EcctrlAnimationState[] = [];
-    const controller = new EcctrlAnimationStateController({
+    const changes: AnimationState[] = [];
+    const controller = new AnimationStateController({
       handle,
       getSnapshot: () => snapshot,
       onChange: (state, stateContext) => {
@@ -60,7 +60,7 @@ describe("EcctrlAnimationStateController", () => {
   });
 
   it("supports custom state resolvers for other controllers", () => {
-    const controller = new EcctrlAnimationStateController({
+    const controller = new AnimationStateController({
       handle: { forceRun: true },
       getSnapshot: () => ({
         isOnGround: true,
@@ -69,7 +69,7 @@ describe("EcctrlAnimationStateController", () => {
         runActive: false,
         jumpActive: false
       }),
-      resolver: (stateContext) => stateContext.handle?.forceRun ? "RUN" : resolveEcctrlAnimationState(stateContext)
+      resolver: (stateContext) => stateContext.handle?.forceRun ? "RUN" : resolveAnimationState(stateContext)
     });
 
     expect(controller.update()).toBe("RUN");
@@ -92,16 +92,16 @@ describe("EcctrlAnimationStateController", () => {
   });
 });
 
-describe("EcctrlThreeAnimationController", () => {
+describe("ThreeAnimationController", () => {
   it("plays Ecctrl's default clips through normal Three.js AnimationActions", () => {
-    let snapshot: EcctrlAnimationSnapshot = {
+    let snapshot: AnimationSnapshot = {
       isOnGround: true,
       isFalling: false,
       isMoving: false,
       runActive: false,
       jumpActive: false
     };
-    const stateController = new EcctrlAnimationStateController({ getSnapshot: () => snapshot });
+    const stateController = new AnimationStateController({ getSnapshot: () => snapshot });
     const events: string[] = [];
     const idle = new FakeAnimationAction("Idle_Loop", events);
     const walk = new FakeAnimationAction("Walk_Loop", events);
@@ -116,7 +116,7 @@ describe("EcctrlThreeAnimationController", () => {
       ["Jump_Loop", jumpLoop.asAction()]
     ]);
 
-    const animation = new EcctrlThreeAnimationController({ stateController, actions });
+    const animation = new ThreeAnimationController({ stateController, actions });
     expect(events).toEqual([]);
     expect(animation.active).toBeNull();
 
@@ -151,11 +151,11 @@ describe("EcctrlThreeAnimationController", () => {
     expect(animation.update()).toBe("JUMP_IDLE");
     expect(animation.active).toBe(jumpLoop.asAction());
     expect(animation.activeActionName).toBe("Jump_Loop");
-    expect(DEFAULT_ECCTRL_THREE_ANIMATION_ACTIONS.RUN).toBe("Jog_Fwd_Loop");
+    expect(DEFAULT_THREE_ANIMATION_ACTIONS.RUN).toBe("Jog_Fwd_Loop");
   });
 
   it("can opt into autoplaying the initial action for imperative Three.js apps", () => {
-    const stateController = new EcctrlAnimationStateController({
+    const stateController = new AnimationStateController({
       getSnapshot: () => ({
         isOnGround: true,
         isFalling: false,
@@ -166,7 +166,7 @@ describe("EcctrlThreeAnimationController", () => {
     });
     const events: string[] = [];
     const idle = new FakeAnimationAction("Idle_Loop", events);
-    const animation = new EcctrlThreeAnimationController({
+    const animation = new ThreeAnimationController({
       stateController,
       actions: new Map<string, AnimationAction>([["Idle_Loop", idle.asAction()]]),
       autoplayInitialAction: true
@@ -177,7 +177,7 @@ describe("EcctrlThreeAnimationController", () => {
   });
 });
 
-function context(overrides: Partial<EcctrlAnimationSnapshot> & { wasOnGround: boolean }) {
+function context(overrides: Partial<AnimationSnapshot> & { wasOnGround: boolean }) {
   return {
     handle: null,
     isOnGround: false,

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { Shape, type Body, type MotionQuality, type World } from "jolt-ts";
-import { EcctrlJoltController, createEcctrlJoltAnimationStateController } from "../src/index.js";
+import { CharacterController, createCharacterAnimationStateController } from "../src/index.js";
 
 const DT = 1 / 60;
 
@@ -10,7 +10,7 @@ afterEach(() => {
   for (const world of worlds.splice(0)) world.dispose();
 });
 
-describe("EcctrlJoltController", () => {
+describe("CharacterController", () => {
   it("settles a floating capsule at the Ecctrl hover distance", async () => {
     const { world, controller } = await createFlatController();
 
@@ -46,7 +46,7 @@ describe("EcctrlJoltController", () => {
 
   it("drives the upstream RUN animation state from real controller input", async () => {
     const { world, controller } = await createFlatController();
-    const animationState = createEcctrlJoltAnimationStateController(controller);
+    const animationState = createCharacterAnimationStateController(controller);
 
     for (let i = 0; i < 120; i += 1) step(world, controller);
     expect(animationState.update()).toBe("IDLE");
@@ -62,7 +62,7 @@ describe("EcctrlJoltController", () => {
 
   it("uses Ecctrl's camera-forward projection when custom forward is disabled", async () => {
     const world = await createFlatWorld();
-    const controller = new EcctrlJoltController({
+    const controller = new CharacterController({
       world,
       position: [0, 2, 0],
       rotation: [Math.SQRT1_2, 0, 0, Math.SQRT1_2],
@@ -87,7 +87,7 @@ describe("EcctrlJoltController", () => {
       deterministic: "cross-platform"
     });
     worlds.push(world);
-    const controller = new EcctrlJoltController({
+    const controller = new CharacterController({
       world,
       position: [0, 3, 0],
       enableCustomGravity: false,
@@ -228,13 +228,13 @@ describe("EcctrlJoltController", () => {
 
   it("does not require React or DOM globals", async () => {
     const module = await import("../src/index.js");
-    expect(module.EcctrlJoltController).toBeTypeOf("function");
+    expect(module.CharacterController).toBeTypeOf("function");
     expect(globalThis.document).toBeUndefined();
   });
 
   it("forwards the allowSleeping runtime option to the Jolt body", async () => {
     const world = await createFlatWorld();
-    const controller = new EcctrlJoltController({
+    const controller = new CharacterController({
       world,
       position: [0, 1, 0],
       allowSleeping: false
@@ -246,9 +246,9 @@ describe("EcctrlJoltController", () => {
   });
 });
 
-async function createFlatController(): Promise<{ world: World; controller: EcctrlJoltController }> {
+async function createFlatController(): Promise<{ world: World; controller: CharacterController }> {
   const world = await createFlatWorld();
-  const controller = new EcctrlJoltController({
+  const controller = new CharacterController({
     world,
     position: [0, 1, 0],
     enableToggleRun: false,
@@ -278,7 +278,7 @@ async function createKinematicPlatformController(options: {
   readonly controllerPosition?: [number, number, number];
   readonly platformPosition?: [number, number, number];
   readonly motionQuality?: MotionQuality;
-} = {}): Promise<{ world: World; controller: EcctrlJoltController; platform: Body }> {
+} = {}): Promise<{ world: World; controller: CharacterController; platform: Body }> {
   const { World } = await import("jolt-ts");
   const world = await World.create({
     gravity: [0, -9.81, 0],
@@ -292,7 +292,7 @@ async function createKinematicPlatformController(options: {
     layer: "moving",
     friction: 0.8
   });
-  const controller = new EcctrlJoltController({
+  const controller = new CharacterController({
     world,
     position: options.controllerPosition ?? [0, 1.2, 0],
     motionQuality: options.motionQuality,
@@ -302,7 +302,7 @@ async function createKinematicPlatformController(options: {
   return { world, controller, platform };
 }
 
-async function createSteepFirstHitController(): Promise<{ world: World; controller: EcctrlJoltController; floor: Body }> {
+async function createSteepFirstHitController(): Promise<{ world: World; controller: CharacterController; floor: Body }> {
   const { World } = await import("jolt-ts");
   const world = await World.create({
     gravity: [0, -9.81, 0],
@@ -325,7 +325,7 @@ async function createSteepFirstHitController(): Promise<{ world: World; controll
     layer: "static",
     friction: 0.8
   });
-  const controller = new EcctrlJoltController({
+  const controller = new CharacterController({
     world,
     position: [0, 1, 0],
     enableToggleRun: false,
@@ -337,7 +337,7 @@ async function createSteepFirstHitController(): Promise<{ world: World; controll
   return { world, controller, floor };
 }
 
-function step(world: World, controller: EcctrlJoltController): void {
+function step(world: World, controller: CharacterController): void {
   controller.update(DT);
   world.step(DT);
 }

@@ -1,0 +1,69 @@
+---
+title: jolt-ts-character-controller
+description: Imperative, rendering-free Ecctrl-style character, vehicle, and drone controllers for the jolt-ts physics wrapper.
+template: splash
+hero:
+  tagline: Imperative, rendering-free Ecctrl-style character, vehicle, and drone controllers for the jolt-ts physics wrapper. You own the world, the loop, the camera, and the renderer.
+  actions:
+    - text: Get Started
+      link: /jolt-ts-character-controller/getting-started/introduction/
+      icon: right-arrow
+    - text: View on GitHub
+      link: https://github.com/snackdotgame/jolt-ts-character-controller
+      icon: external
+      variant: minimal
+---
+
+import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+```ts
+import { World } from "jolt-ts";
+import { CharacterController } from "jolt-ts-character-controller";
+
+const world = await World.create({ gravity: [0, -9.81, 0] });
+const controller = new CharacterController({ world, position: [0, 1, 0] });
+
+controller.setForwardDirection({ x: 0, y: 0, z: 1 });
+controller.setMovement({ forward: true, run: true });
+
+controller.step(1 / 60); // apply floating, friction, movement, jump
+world.step(1 / 60);       // integrate the physics world
+```
+
+## What you get
+
+<CardGrid stagger>
+	<Card title="Character controller" icon="person">
+		A floating capsule with Ecctrl-style movement, jumping, slopes, auto-balance,
+		moving-platform coupling, and optional custom (planet / wall-walking) gravity.
+	</Card>
+	<Card title="Vehicles & drones" icon="rocket">
+		Shape-cast wheeled cars with suspension, tire slip, and an automatic gearbox,
+		plus thrust-and-torque multirotor drones with velocity or position control.
+	</Card>
+	<Card title="Animation, decoupled" icon="seti:video">
+		A tiny locomotion state machine that turns controller state into
+		`IDLE`/`WALK`/`RUN`/`JUMP_*` and drives a Three.js `AnimationMixer` — or any
+		renderer you like.
+	</Card>
+	<Card title="Network-ready" icon="setting">
+		Deterministic stepping with `getSyncState()` / `applySyncState()` for
+		server authority, rollback, and client reconciliation. No allocations on the
+		hot path.
+	</Card>
+</CardGrid>
+
+## Start reading
+
+<CardGrid>
+	<LinkCard title="Introduction" href="/jolt-ts-character-controller/getting-started/introduction/" description="What this library is, and what it deliberately is not." />
+	<LinkCard title="Installation" href="/jolt-ts-character-controller/getting-started/installation/" description="Add the package and its jolt-ts + three peers." />
+	<LinkCard title="Quick Start" href="/jolt-ts-character-controller/getting-started/quick-start/" description="A complete keyboard-driven character in ~40 lines." />
+	<LinkCard title="API Reference" href="/jolt-ts-character-controller/reference/api/" description="Every export, grouped by module." />
+</CardGrid>
+
+## Acknowledgements
+
+This library is an imperative TypeScript port of
+[**Ecctrl**](https://github.com/pmndrs/ecctrl) by Erdong Chen and contributors.
+See [Acknowledgements](/jolt-ts-character-controller/acknowledgements/) for full credits and licensing.

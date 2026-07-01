@@ -1,0 +1,45 @@
+---
+title: Driving a car
+description: A shape-cast wheeled Vehicle driving a steady circle, with suspension, tire friction, and steered front wheels.
+---
+
+import PhysicsDemo from "../../../components/PhysicsDemo.astro";
+
+A four-wheeled `Vehicle` driving a constant left-hand circle. The front wheels
+steer; all four drive and brake. The wheel meshes are children of the chassis,
+so they follow the body automatically — only their steer angle and spin are
+updated from the per-wheel snapshots.
+
+<PhysicsDemo demo="car" hint="Drag to orbit" />
+
+## How it works
+
+```ts
+import { Vehicle } from "jolt-ts-character-controller";
+
+const vehicle = new Vehicle({
+  world,
+  shape: Shape.box({ halfExtents: [1, 0.4, 2.4] }),
+  density: 200,
+  carConfig: { engineHorsepower: 600, maxSteerAngle: Math.PI / 6 },
+});
+
+// Front axle steers; rear drives. Stiff suspension for a heavy body.
+vehicle.addWheel({ position: [0.9, -0.35, 1.8], steerWheel: true, driveWheel: true, brakeWheel: true, springK: 38000, dampingC: 4000 });
+// …three more wheels…
+
+function fixedStep(dt) {
+  vehicle.setMovement({ forward: true, steerLeft: true });
+  vehicle.step(dt);
+  world.step(dt);
+}
+
+// Visuals: read each wheel's snapshot for steer + spin.
+const snap = vehicle.wheels[i].snapshot();
+pivot.rotation.y = snap.steerAngle;
+spinner.rotation.x += snap.wheelAngularVelocity * dt;
+```
+
+## See also
+
+- [Cars](/jolt-ts-character-controller/vehicles/cars/) — wheels, suspension, the gearbox, and reading wheel state for visuals.

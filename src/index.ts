@@ -1,49 +1,49 @@
 export {
-  EcctrlJoltController,
-  createEcctrlJoltBody,
-  DEFAULT_ECCTRL_OPTIONS,
-  type EcctrlJoltControllerOptions,
-  type EcctrlJoltControllerSnapshot,
-  type EcctrlJoltRuntimeOptions,
-  type EcctrlSyncState
+  CharacterController,
+  createCharacterBody,
+  DEFAULT_CONTROLLER_OPTIONS,
+  type CharacterControllerOptions,
+  type CharacterControllerSnapshot,
+  type CharacterRuntimeOptions,
+  type SyncState
 } from "./controller.js";
 export {
   DEFAULT_CAR_CONFIG,
   DEFAULT_DRONE_CONFIG,
   DEFAULT_PROPELLER_OPTIONS,
   DEFAULT_WHEEL_OPTIONS,
-  EcctrlJoltShapeCastWheel,
-  EcctrlJoltThrustPropeller,
-  EcctrlJoltVehicle,
-  createEcctrlJoltVehicleBody,
+  ShapeCastWheel,
+  ThrustPropeller,
+  Vehicle,
+  createVehicleBody,
   type CarConfig,
   type DroneConfig,
-  type EcctrlJoltPropellerOptions,
-  type EcctrlJoltPropellerSnapshot,
-  type EcctrlJoltVehicleOptions,
-  type EcctrlJoltVehicleRuntimeOptions,
-  type EcctrlJoltVehicleSnapshot,
-  type EcctrlJoltWheelOptions,
-  type EcctrlJoltWheelSnapshot,
+  type PropellerOptions,
+  type PropellerSnapshot,
+  type VehicleOptions,
+  type VehicleRuntimeOptions,
+  type VehicleSnapshot,
+  type WheelOptions,
+  type WheelSnapshot,
   type TransmissionMode,
   type VehicleControlMode
 } from "./vehicle.js";
 export {
-  EcctrlAnimationStateController,
+  AnimationStateController,
   animationSnapshotFromControllerSnapshot,
-  createEcctrlJoltAnimationStateController,
-  resolveEcctrlAnimationState,
-  type EcctrlAnimationSnapshot,
-  type EcctrlAnimationState,
-  type EcctrlAnimationStateContext,
-  type EcctrlAnimationStateControllerOptions,
-  type EcctrlAnimationStateResolver
+  createCharacterAnimationStateController,
+  resolveAnimationState,
+  type AnimationSnapshot,
+  type AnimationState,
+  type AnimationStateContext,
+  type AnimationStateControllerOptions,
+  type AnimationStateResolver
 } from "./animation.js";
 export {
-  DEFAULT_ECCTRL_THREE_ANIMATION_ACTIONS,
-  EcctrlThreeAnimationController,
-  type EcctrlAnimationStateControllerLike,
-  type EcctrlThreeAnimationControllerOptions
+  DEFAULT_THREE_ANIMATION_ACTIONS,
+  ThreeAnimationController,
+  type AnimationStateControllerLike,
+  type ThreeAnimationControllerOptions
 } from "./three-animation.js";
 export {
   type CurveData,
@@ -58,7 +58,7 @@ export {
   type ReadonlyVehicleInput,
   type Vector3Like,
   type QuaternionLike,
-  type EcctrlUserDataType,
+  type ControllerUserData,
   type GroundDetectionMode,
   type VehicleInput
 } from "./types.js";

@@ -1,0 +1,43 @@
+---
+title: Slopes & steps
+description: The floating capsule gliding up a ramp and over a staircase as it walks a loop, showing slope and step handling.
+---
+
+import PhysicsDemo from "../../../components/PhysicsDemo.astro";
+
+The same looping walk, but now the path crosses a tilted ramp and a small
+staircase. The hover spring keeps the capsule floating a fixed distance above
+whatever ground is beneath it, so it glides up and over the changing height
+instead of catching on edges.
+
+<PhysicsDemo demo="slopes" hint="Drag to orbit" />
+
+## How it works
+
+Nothing special is needed for slopes and steps — they're handled by the floating
+ground-cast. The scene just places static geometry in the character's path:
+
+```ts
+// A tilted ramp.
+world.createBody({
+  type: "static",
+  shape: Shape.box({ halfExtents: [1.6, 0.15, 2.4] }),
+  position: [3.4, 0.5, 0],
+  rotation: [0, 0, Math.sin(0.35 / 2), Math.cos(0.35 / 2)], // ~20° tilt
+  layer: "static",
+});
+
+// The character walks the loop exactly as before.
+controller.setForwardDirection({ x: -Math.sin(t * 0.6), y: 0, z: Math.cos(t * 0.6) });
+controller.setMovement({ forward: true });
+controller.step(dt);
+world.step(dt);
+```
+
+The relevant tuning lives in [`slopeMaxAngle`, `floatHeight`, `springK`, and
+`dampingC`](/jolt-ts-character-controller/character-controller/configuration/#ground-detection--floating).
+
+## See also
+
+- [Configuration](/jolt-ts-character-controller/character-controller/configuration/#ground-detection--floating) — hover and slope options.
+- [Overview](/jolt-ts-character-controller/character-controller/overview/) — how the ground cast works each tick.

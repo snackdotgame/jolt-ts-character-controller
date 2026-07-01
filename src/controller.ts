@@ -2,7 +2,7 @@ import { Body, Shape, type MotionQuality, type ShapeCastHit, type RayHit, type W
 import { Quaternion, Vector3 } from "three";
 import { bakeCurveLUT, evaluateCurveLUT, type CurveData, type CurveLUT } from "./curves.js";
 import { clamp, createSlerpVec3, vectorFromLike } from "./math.js";
-import type { EcctrlUserDataType, GroundDetectionMode, MovementInput, QuaternionLike, Vector3Like } from "./types.js";
+import type { ControllerUserData, GroundDetectionMode, MovementInput, QuaternionLike, Vector3Like } from "./types.js";
 
 const DEFAULT_CURVE_DATA: CurveData = {
   points: [
@@ -12,7 +12,7 @@ const DEFAULT_CURVE_DATA: CurveData = {
   ]
 };
 
-export interface EcctrlJoltRuntimeOptions {
+export interface CharacterRuntimeOptions {
   world: World;
   body?: Body;
   position?: readonly [number, number, number] | Vector3Like;
@@ -28,7 +28,7 @@ export interface EcctrlJoltRuntimeOptions {
   allowSleeping?: boolean;
 }
 
-export interface EcctrlJoltControllerOptions extends EcctrlJoltRuntimeOptions {
+export interface CharacterControllerOptions extends CharacterRuntimeOptions {
   enable?: boolean;
   capsuleHalfHeight?: number;
   capsuleRadius?: number;
@@ -76,7 +76,7 @@ export interface EcctrlJoltControllerOptions extends EcctrlJoltRuntimeOptions {
   counterMoveImpFactor?: number;
 }
 
-export interface EcctrlJoltControllerSnapshot {
+export interface CharacterControllerSnapshot {
   readonly position: Vector3Like;
   readonly rotation: QuaternionLike;
   readonly linearVelocity: Vector3Like;
@@ -122,7 +122,7 @@ export interface EcctrlJoltControllerSnapshot {
 // steps (ground/jump latches and the gravity direction). Everything else in the
 // snapshot is re-derived each step. Designed to be trivially (de)serialized for
 // network sync — see the host app's binary codec.
-export interface EcctrlSyncState {
+export interface SyncState {
   position: [number, number, number];
   linearVelocity: [number, number, number];
   rotation: [number, number, number, number];
@@ -134,7 +134,7 @@ export interface EcctrlSyncState {
   jumpElapsed: number; // seconds the active jump has been applied
 }
 
-export const DEFAULT_ECCTRL_OPTIONS = {
+export const DEFAULT_CONTROLLER_OPTIONS = {
   enable: true,
   capsuleHalfHeight: 0.3,
   capsuleRadius: 0.3,
@@ -179,19 +179,19 @@ export const DEFAULT_ECCTRL_OPTIONS = {
   allowSleeping: true
 };
 
-type ResolvedOptions = typeof DEFAULT_ECCTRL_OPTIONS & {
+type ResolvedOptions = typeof DEFAULT_CONTROLLER_OPTIONS & {
   rayOriginOffest: number;
   rayLength: number;
   rayRadius: number;
   gravityField: (position: Vector3) => Vector3Like;
 };
 
-export function createEcctrlJoltBody(options: EcctrlJoltRuntimeOptions & {
+export function createCharacterBody(options: CharacterRuntimeOptions & {
   capsuleHalfHeight?: number;
   capsuleRadius?: number;
 }): Body {
-  const capsuleHalfHeight = options.capsuleHalfHeight ?? DEFAULT_ECCTRL_OPTIONS.capsuleHalfHeight;
-  const capsuleRadius = options.capsuleRadius ?? DEFAULT_ECCTRL_OPTIONS.capsuleRadius;
+  const capsuleHalfHeight = options.capsuleHalfHeight ?? DEFAULT_CONTROLLER_OPTIONS.capsuleHalfHeight;
+  const capsuleRadius = options.capsuleRadius ?? DEFAULT_CONTROLLER_OPTIONS.capsuleRadius;
   return options.world.createBody({
     type: "dynamic",
     shape: Shape.capsule({ halfHeight: capsuleHalfHeight, radius: capsuleRadius }),
@@ -209,7 +209,7 @@ export function createEcctrlJoltBody(options: EcctrlJoltRuntimeOptions & {
   });
 }
 
-export class EcctrlJoltController {
+export class CharacterController {
   readonly world: World;
   readonly body: Body;
   readonly options: ResolvedOptions;
@@ -316,10 +316,10 @@ export class EcctrlJoltController {
   private movingObjectAngularVelocityValue = 0;
   private isLockForwardValue: boolean;
 
-  constructor(options: EcctrlJoltControllerOptions) {
+  constructor(options: CharacterControllerOptions) {
     this.world = options.world;
     this.options = resolveOptions(options);
-    this.body = options.body ?? createEcctrlJoltBody({
+    this.body = options.body ?? createCharacterBody({
       world: options.world,
       position: options.position,
       rotation: options.rotation,
@@ -376,7 +376,7 @@ export class EcctrlJoltController {
     );
   }
 
-  update(deltaTime: number): EcctrlJoltControllerSnapshot {
+  update(deltaTime: number): CharacterControllerSnapshot {
     this.step(deltaTime);
     return this.snapshot();
   }
@@ -451,7 +451,7 @@ export class EcctrlJoltController {
     return;
   }
 
-  snapshot(): EcctrlJoltControllerSnapshot {
+  snapshot(): CharacterControllerSnapshot {
     return {
       position: cloneVector(this.currentPos),
       rotation: cloneQuaternion(this.currentQuat),
@@ -496,7 +496,7 @@ export class EcctrlJoltController {
 
   // Capture the full deterministic state (body pose/velocity + internal
   // latches) so it can be serialized and restored exactly elsewhere.
-  getSyncState(): EcctrlSyncState {
+  getSyncState(): SyncState {
     const p = this.body.translation();
     const r = this.body.rotation();
     const v = this.body.linearVelocity();
@@ -518,7 +518,7 @@ export class EcctrlJoltController {
   // Restore a previously captured state: teleport the body, reset the internal
   // latches, and refresh the cached snapshot vectors so a read right after is
   // consistent. Used for client reconciliation / rollback.
-  applySyncState(state: EcctrlSyncState): void {
+  applySyncState(state: SyncState): void {
     this.body.setTranslation(state.position);
     this.body.setRotation(state.rotation);
     this.body.setLinearVelocity(state.linearVelocity[0], state.linearVelocity[1], state.linearVelocity[2]);
@@ -871,7 +871,7 @@ export class EcctrlJoltController {
         this.castDirection,
         {
           excludeBody: this.body,
-          filter: ({ body }) => this.ecctrlRayFilter(body)
+          filter: ({ body }) => this.rayFilter(body)
         }
       );
 
@@ -922,7 +922,7 @@ export class EcctrlJoltController {
     this.castDirection.copy(this.rayDirection).multiplyScalar(maxDistance);
     const hit = this.world.castRay(this.rayOrigin, this.castDirection, {
       excludeBody: this.body,
-      filter: ({ body }) => this.ecctrlRayFilter(body)
+      filter: ({ body }) => this.rayFilter(body)
     });
     if (!hit) return;
 
@@ -941,7 +941,7 @@ export class EcctrlJoltController {
   private findWalkableCenterRayHit(maxDistance: number): RayHit | null {
     const hits = this.world.castRayAll(this.rayOrigin, this.castDirection.copy(this.rayDirection).multiplyScalar(maxDistance), {
       excludeBody: this.body,
-      filter: ({ body }) => this.ecctrlRayFilter(body)
+      filter: ({ body }) => this.rayFilter(body)
     });
     for (const hit of hits) {
       this.actualSlopeNormalVec.copy(hit.normal);
@@ -1142,18 +1142,18 @@ export class EcctrlJoltController {
     return this.runActiveValue;
   }
 
-  private ecctrlRayFilter(body: Body | undefined): boolean {
+  private rayFilter(body: Body | undefined): boolean {
     const userData = body?.userData;
-    if (!isEcctrlUserData(userData)) return true;
-    return !(userData.ecctrl?.excludeRay || userData.ecctrl?.excludeCharacterRay);
+    if (!isControllerUserData(userData)) return true;
+    return !(userData.controller?.excludeRay || userData.controller?.excludeCharacterRay);
   }
 }
 
-function resolveOptions(options: EcctrlJoltControllerOptions): ResolvedOptions {
-  const capsuleRadius = options.capsuleRadius ?? DEFAULT_ECCTRL_OPTIONS.capsuleRadius;
-  const capsuleHalfHeight = options.capsuleHalfHeight ?? DEFAULT_ECCTRL_OPTIONS.capsuleHalfHeight;
+function resolveOptions(options: CharacterControllerOptions): ResolvedOptions {
+  const capsuleRadius = options.capsuleRadius ?? DEFAULT_CONTROLLER_OPTIONS.capsuleRadius;
+  const capsuleHalfHeight = options.capsuleHalfHeight ?? DEFAULT_CONTROLLER_OPTIONS.capsuleHalfHeight;
   return {
-    ...DEFAULT_ECCTRL_OPTIONS,
+    ...DEFAULT_CONTROLLER_OPTIONS,
     ...options,
     capsuleHalfHeight,
     capsuleRadius,
@@ -1181,6 +1181,6 @@ function cloneQuaternion(input: Quaternion): QuaternionLike {
   return { x: input.x, y: input.y, z: input.z, w: input.w };
 }
 
-function isEcctrlUserData(input: unknown): input is EcctrlUserDataType {
-  return typeof input === "object" && input !== null && "ecctrl" in input;
+function isControllerUserData(input: unknown): input is ControllerUserData {
+  return typeof input === "object" && input !== null && "controller" in input;
 }

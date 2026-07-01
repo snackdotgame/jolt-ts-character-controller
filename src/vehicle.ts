@@ -11,7 +11,7 @@ import { Quaternion, Vector3 } from "three";
 import { bakeCurveLUT, evaluateCurveLUT, type CurveData, type CurveLUT } from "./curves.js";
 import { clamp, createSlerpVec3, remap, vectorFromLike } from "./math.js";
 import type {
-  EcctrlUserDataType,
+  ControllerUserData,
   GroundDetectionMode,
   QuaternionLike,
   ReadonlyVehicleInput,
@@ -66,7 +66,7 @@ const DEFAULT_MASS_RATIO_FALL_OFF_CURVE: CurveData = {
 export type TransmissionMode = "auto" | "manual";
 export type VehicleControlMode = "VELOCITY" | "POSITION";
 
-export interface EcctrlJoltVehicleRuntimeOptions {
+export interface VehicleRuntimeOptions {
   world: World;
   body?: Body;
   shape?: ShapeInput;
@@ -121,7 +121,7 @@ export interface DroneConfig {
   VERT_VEL_P: number;
 }
 
-export interface EcctrlJoltVehicleOptions extends EcctrlJoltVehicleRuntimeOptions {
+export interface VehicleOptions extends VehicleRuntimeOptions {
   enable?: boolean;
   carConfig?: Partial<CarConfig>;
   droneConfig?: Partial<DroneConfig>;
@@ -130,7 +130,7 @@ export interface EcctrlJoltVehicleOptions extends EcctrlJoltVehicleRuntimeOption
   gravityDirLerpSpeed?: number;
 }
 
-export interface EcctrlJoltVehicleSnapshot {
+export interface VehicleSnapshot {
   readonly position: Vector3Like;
   readonly rotation: QuaternionLike;
   readonly linearVelocity: Vector3Like;
@@ -148,7 +148,7 @@ export interface EcctrlJoltVehicleSnapshot {
   readonly propellerCount: number;
 }
 
-export interface EcctrlJoltWheelOptions {
+export interface WheelOptions {
   id?: string;
   name?: string;
   enable?: boolean;
@@ -190,7 +190,7 @@ export interface EcctrlJoltWheelOptions {
   wheelModelReversRotation?: boolean;
 }
 
-export interface EcctrlJoltWheelSnapshot {
+export interface WheelSnapshot {
   readonly id: string;
   readonly name: string;
   readonly rayPos: Vector3Like;
@@ -217,7 +217,7 @@ export interface EcctrlJoltWheelSnapshot {
   readonly wheelAngularVelocity: number;
 }
 
-export interface EcctrlJoltPropellerOptions {
+export interface PropellerOptions {
   id?: string;
   name?: string;
   enable?: boolean;
@@ -229,7 +229,7 @@ export interface EcctrlJoltPropellerOptions {
   invertTorque?: boolean;
 }
 
-export interface EcctrlJoltPropellerSnapshot {
+export interface PropellerSnapshot {
   readonly id: string;
   readonly name: string;
   readonly thrustPosition: Vector3Like;
@@ -244,7 +244,7 @@ export interface EcctrlJoltPropellerSnapshot {
   readonly finalThrottle: number;
 }
 
-type ResolvedVehicleOptions = Required<Pick<EcctrlJoltVehicleOptions, "enable" | "enableCustomGravity" | "gravityDirLerpSpeed">> & {
+type ResolvedVehicleOptions = Required<Pick<VehicleOptions, "enable" | "enableCustomGravity" | "gravityDirLerpSpeed">> & {
   gravityField: (position: Vector3) => Vector3Like;
   carConfig: CarConfig;
   droneConfig: DroneConfig;
@@ -266,12 +266,12 @@ type SteerWheelConfig = {
   maxWheelAngVel: number;
 };
 
-type ResolvedWheelOptions = Required<Omit<EcctrlJoltWheelOptions, "id" | "name" | "position" | "rotation">> & {
+type ResolvedWheelOptions = Required<Omit<WheelOptions, "id" | "name" | "position" | "rotation">> & {
   id: string;
   name: string;
 };
 
-type ResolvedPropellerOptions = Required<Omit<EcctrlJoltPropellerOptions, "id" | "name" | "position" | "rotation">> & {
+type ResolvedPropellerOptions = Required<Omit<PropellerOptions, "id" | "name" | "position" | "rotation">> & {
   id: string;
   name: string;
 };
@@ -365,7 +365,7 @@ const FIXED_Z = new Vector3(0, 0, 1);
 const ROT_Z_90 = new Quaternion().setFromAxisAngle(FIXED_Z, Math.PI / 2);
 const EPSILON = 1e-6;
 
-export function createEcctrlJoltVehicleBody(options: EcctrlJoltVehicleRuntimeOptions): Body {
+export function createVehicleBody(options: VehicleRuntimeOptions): Body {
   return options.world.createBody({
     type: "dynamic",
     shape: options.shape ?? Shape.box({ halfExtents: [1, 0.4, 2.4] }),
@@ -387,12 +387,12 @@ export function createEcctrlJoltVehicleBody(options: EcctrlJoltVehicleRuntimeOpt
   });
 }
 
-export class EcctrlJoltVehicle {
+export class Vehicle {
   readonly world: World;
   readonly body: Body;
   readonly options: ResolvedVehicleOptions;
-  readonly wheels: EcctrlJoltShapeCastWheel[] = [];
-  readonly propellers: EcctrlJoltThrustPropeller[] = [];
+  readonly wheels: ShapeCastWheel[] = [];
+  readonly propellers: ThrustPropeller[] = [];
 
   private readonly movementState: Required<Omit<VehicleInput, "joystickL" | "joystickR">> & {
     joystickL: { x: number; y: number };
@@ -465,10 +465,10 @@ export class EcctrlJoltVehicle {
   private shiftCooldownTimer = 0;
   private hoverThrottle = 0;
 
-  constructor(options: EcctrlJoltVehicleOptions) {
+  constructor(options: VehicleOptions) {
     this.world = options.world;
     this.options = resolveVehicleOptions(options);
-    this.body = options.body ?? createEcctrlJoltVehicleBody(options);
+    this.body = options.body ?? createVehicleBody(options);
     this.engineTorqueCurve = bakeCurveLUT(
       this.options.carConfig.engineTorqueCurveData.points,
       this.options.carConfig.engineTorqueCurveData.samples ?? 50
@@ -495,26 +495,26 @@ export class EcctrlJoltVehicle {
     vectorFromLike(this.body.translation(), this.targetPosition);
   }
 
-  addWheel(options: EcctrlJoltWheelOptions): EcctrlJoltShapeCastWheel {
-    const wheel = new EcctrlJoltShapeCastWheel(options);
+  addWheel(options: WheelOptions): ShapeCastWheel {
+    const wheel = new ShapeCastWheel(options);
     this.wheels.push(wheel);
     this.syncWheelConfig();
     return wheel;
   }
 
-  removeWheel(wheel: EcctrlJoltShapeCastWheel): void {
+  removeWheel(wheel: ShapeCastWheel): void {
     const index = this.wheels.indexOf(wheel);
     if (index >= 0) this.wheels.splice(index, 1);
     this.syncWheelConfig();
   }
 
-  addPropeller(options: EcctrlJoltPropellerOptions): EcctrlJoltThrustPropeller {
-    const propeller = new EcctrlJoltThrustPropeller(options);
+  addPropeller(options: PropellerOptions): ThrustPropeller {
+    const propeller = new ThrustPropeller(options);
     this.propellers.push(propeller);
     return propeller;
   }
 
-  removePropeller(propeller: EcctrlJoltThrustPropeller): void {
+  removePropeller(propeller: ThrustPropeller): void {
     const index = this.propellers.indexOf(propeller);
     if (index >= 0) this.propellers.splice(index, 1);
   }
@@ -570,7 +570,7 @@ export class EcctrlJoltVehicle {
     this.syncWheelConfig();
   }
 
-  update(deltaTime: number): EcctrlJoltVehicleSnapshot {
+  update(deltaTime: number): VehicleSnapshot {
     this.step(deltaTime);
     return this.snapshot();
   }
@@ -587,7 +587,7 @@ export class EcctrlJoltVehicle {
     if (this.propellers.length > 0) this.applyDroneControl(deltaTime);
   }
 
-  snapshot(): EcctrlJoltVehicleSnapshot {
+  snapshot(): VehicleSnapshot {
     return {
       position: cloneVector(this.currentPos),
       rotation: cloneQuaternion(this.currentQuat),
@@ -955,7 +955,7 @@ export class EcctrlJoltVehicle {
     this.torqueBody.copy(this.torqueWorld).applyQuaternion(this.inverseQuat);
   }
 
-  private computePropellerFinalThrottle(propeller: EcctrlJoltThrustPropeller, maxSafeMix: number): number {
+  private computePropellerFinalThrottle(propeller: ThrustPropeller, maxSafeMix: number): number {
     const mix =
       (this.torqueBody.x * propeller.ax) / (this.propellerPotential.sumAX || 1) +
       (this.torqueBody.z * propeller.az) / (this.propellerPotential.sumAZ || 1) +
@@ -1003,7 +1003,7 @@ export class EcctrlJoltVehicle {
 
 }
 
-export class EcctrlJoltShapeCastWheel {
+export class ShapeCastWheel {
   readonly options: ResolvedWheelOptions;
 
   private readonly localPosition = new Vector3();
@@ -1078,7 +1078,7 @@ export class EcctrlJoltShapeCastWheel {
   private desiredLngImpulse = 0;
   private desiredLatImpulse = 0;
 
-  constructor(options: EcctrlJoltWheelOptions) {
+  constructor(options: WheelOptions) {
     this.options = resolveWheelOptions(options);
     vectorFromLike(vectorObjectInput(options.position), this.localPosition);
     const rotation = quaternionInput(options.rotation);
@@ -1100,12 +1100,12 @@ export class EcctrlJoltShapeCastWheel {
     );
   }
 
-  update(vehicle: EcctrlJoltVehicle, deltaTime: number): EcctrlJoltWheelSnapshot {
+  update(vehicle: Vehicle, deltaTime: number): WheelSnapshot {
     this.step(vehicle, deltaTime, vehicle.gravityMagnitude);
     return this.snapshot();
   }
 
-  step(vehicle: EcctrlJoltVehicle, deltaTime: number, gravityMag: number = vehicle.gravityMagnitude): void {
+  step(vehicle: Vehicle, deltaTime: number, gravityMag: number = vehicle.gravityMagnitude): void {
     if (!this.options.enable) return;
 
     this.updateShapeCastInfo(vehicle);
@@ -1121,7 +1121,7 @@ export class EcctrlJoltShapeCastWheel {
     this.solveWheelRotation(deltaTime);
   }
 
-  snapshot(): EcctrlJoltWheelSnapshot {
+  snapshot(): WheelSnapshot {
     return {
       id: this.options.id,
       name: this.options.name,
@@ -1244,7 +1244,7 @@ export class EcctrlJoltShapeCastWheel {
     return this.steerAngleValue;
   }
 
-  private updateShapeCastInfo(vehicle: EcctrlJoltVehicle): void {
+  private updateShapeCastInfo(vehicle: Vehicle): void {
     this.localSteerQuat.setFromAxisAngle(FIXED_Y, this.steerAngleValue);
     this.worldPosition.copy(this.localPosition).applyQuaternion(vehicle.currQuat).add(vehicle.currPos);
     this.worldQuat.copy(vehicle.currQuat).multiply(this.localBaseQuat).multiply(this.localSteerQuat);
@@ -1259,7 +1259,7 @@ export class EcctrlJoltShapeCastWheel {
     this.rayOriginVelocity.copy(vehicle.currLinVel).add(this.angularVelocityToLinearVelocity);
   }
 
-  private handleUserInput(vehicle: EcctrlJoltVehicle): void {
+  private handleUserInput(vehicle: Vehicle): void {
     const driveConfig = this.driveWheelConfig;
     const steerConfig = this.steerWheelConfig;
     this.driveTorqueValue = 0;
@@ -1301,7 +1301,7 @@ export class EcctrlJoltShapeCastWheel {
     this.steerAngleValue += this.steerIncrement;
   }
 
-  private floatVehicle(vehicle: EcctrlJoltVehicle, deltaTime: number): void {
+  private floatVehicle(vehicle: Vehicle, deltaTime: number): void {
     let hit: ShapeCastHit | null = null;
     let hitDistance = 0;
     this.hitBodyValue = null;
@@ -1310,7 +1310,7 @@ export class EcctrlJoltShapeCastWheel {
       const rayLength = this.options.rayLength + this.options.rayShapeR;
       const rayHit = vehicle.world.castRay(this.rayOrigin, this.castDirection.copy(this.rayDirection).multiplyScalar(rayLength), {
         excludeBody: vehicle.body,
-        filter: ({ body }) => this.ecctrlVehicleRayFilter(body)
+        filter: ({ body }) => this.vehicleRayFilter(body)
       });
       if (rayHit) {
         hitDistance = rayHit.fraction * rayLength;
@@ -1327,7 +1327,7 @@ export class EcctrlJoltShapeCastWheel {
         this.castDirection.copy(this.rayDirection).multiplyScalar(this.options.rayLength),
         {
           excludeBody: vehicle.body,
-          filter: ({ body }) => this.ecctrlVehicleRayFilter(body)
+          filter: ({ body }) => this.vehicleRayFilter(body)
         }
       );
       if (hit) {
@@ -1373,7 +1373,7 @@ export class EcctrlJoltShapeCastWheel {
     }
   }
 
-  private isOnMovingObjectDetect(vehicle: EcctrlJoltVehicle): void {
+  private isOnMovingObjectDetect(vehicle: Vehicle): void {
     if (
       this.options.followPlatform &&
       this.hitBodyValue &&
@@ -1537,14 +1537,14 @@ export class EcctrlJoltShapeCastWheel {
     }
   }
 
-  private ecctrlVehicleRayFilter(body: Body | undefined): boolean {
+  private vehicleRayFilter(body: Body | undefined): boolean {
     const userData = body?.userData;
-    if (!isEcctrlUserData(userData)) return true;
-    return !(userData.ecctrl?.excludeRay || userData.ecctrl?.excludeVehicleRay);
+    if (!isControllerUserData(userData)) return true;
+    return !(userData.controller?.excludeRay || userData.controller?.excludeVehicleRay);
   }
 }
 
-export class EcctrlJoltThrustPropeller {
+export class ThrustPropeller {
   readonly options: ResolvedPropellerOptions;
   readonly thrustPosition = new Vector3();
   readonly thrustDirection = new Vector3(0, 1, 0);
@@ -1572,19 +1572,19 @@ export class EcctrlJoltThrustPropeller {
   ay = 0;
   az = 0;
 
-  constructor(options: EcctrlJoltPropellerOptions) {
+  constructor(options: PropellerOptions) {
     this.options = resolvePropellerOptions(options);
     vectorFromLike(vectorObjectInput(options.position), this.localPosition);
     const rotation = quaternionInput(options.rotation);
     if (rotation) this.localQuat.set(rotation[0], rotation[1], rotation[2], rotation[3]);
   }
 
-  update(vehicle: EcctrlJoltVehicle): EcctrlJoltPropellerSnapshot {
+  update(vehicle: Vehicle): PropellerSnapshot {
     this.step(vehicle);
     return this.snapshot();
   }
 
-  step(_vehicle: EcctrlJoltVehicle): void {
+  step(_vehicle: Vehicle): void {
     this.thrustDirection.set(0, this.options.invertThrust ? -1 : 1, 0).applyQuaternion(this.localQuat);
     this.thrustForce.copy(this.thrustDirection).multiplyScalar(this.options.maxThrust);
     this.leverageTorque.crossVectors(this.localPosition, this.thrustForce);
@@ -1603,7 +1603,7 @@ export class EcctrlJoltThrustPropeller {
     this.az = this.torquePotential.z;
   }
 
-  snapshot(): EcctrlJoltPropellerSnapshot {
+  snapshot(): PropellerSnapshot {
     return {
       id: this.options.id,
       name: this.options.name,
@@ -1641,7 +1641,7 @@ export class EcctrlJoltThrustPropeller {
   }
 }
 
-function resolveVehicleOptions(options: EcctrlJoltVehicleOptions): ResolvedVehicleOptions {
+function resolveVehicleOptions(options: VehicleOptions): ResolvedVehicleOptions {
   return {
     enable: options.enable ?? true,
     carConfig: {
@@ -1663,7 +1663,7 @@ function resolveVehicleOptions(options: EcctrlJoltVehicleOptions): ResolvedVehic
   };
 }
 
-function resolveWheelOptions(options: EcctrlJoltWheelOptions): ResolvedWheelOptions {
+function resolveWheelOptions(options: WheelOptions): ResolvedWheelOptions {
   return {
     ...DEFAULT_WHEEL_OPTIONS,
     ...options,
@@ -1672,7 +1672,7 @@ function resolveWheelOptions(options: EcctrlJoltWheelOptions): ResolvedWheelOpti
   };
 }
 
-function resolvePropellerOptions(options: EcctrlJoltPropellerOptions): ResolvedPropellerOptions {
+function resolvePropellerOptions(options: PropellerOptions): ResolvedPropellerOptions {
   return {
     ...DEFAULT_PROPELLER_OPTIONS,
     ...options,
@@ -1710,12 +1710,12 @@ function cloneQuaternion(input: Quaternion): QuaternionLike {
   return { x: input.x, y: input.y, z: input.z, w: input.w };
 }
 
-function isEcctrlUserData(input: unknown): input is EcctrlUserDataType {
-  return typeof input === "object" && input !== null && "ecctrl" in input;
+function isControllerUserData(input: unknown): input is ControllerUserData {
+  return typeof input === "object" && input !== null && "controller" in input;
 }
 
 let nextId = 0;
 function cryptoRandomId(): string {
   nextId += 1;
-  return `ecctrl-jolt-${nextId}`;
+  return `part-${nextId}`;
 }
