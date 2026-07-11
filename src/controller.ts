@@ -766,6 +766,11 @@ export class CharacterController {
   }
 
   private moveCharacter(run: boolean, fpsCorr: number): void {
+    // Refresh the slide coefficient from the CURRENT standing surface. It used
+    // to be updated only in applyFriction(), which runs on no-input ticks — so
+    // a controller fed movement from its very first step kept the initial 0
+    // and produced a zero move impulse until the input was released once.
+    this.slideFrictionCoef = clamp((this.standingPointFriction + this.options.slideGripFactor) * 0.5, 0, 1);
     this.movingDirCrossAxis.crossVectors(this.inputDirectionVec, this.referenceUpAxis);
     this.movingDirectionVec.copy(this.inputDirectionVec).applyAxisAngle(this.movingDirCrossAxis, this.slopeAngleInFront);
     this.wantToMoveVel.copy(this.relativeVelocityOnPlane).projectOnVector(this.inputDirectionVec);
