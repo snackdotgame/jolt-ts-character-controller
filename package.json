@@ -46,7 +46,7 @@
   },
   "homepage": "https://snackdotgame.github.io/jolt-ts-character-controller/",
   "dependencies": {
-    "jolt-ts": "^0.1.0",
+    "jolt-ts": "^0.1.1",
     "three": "^0.184.0"
   },
   "devDependencies": {
